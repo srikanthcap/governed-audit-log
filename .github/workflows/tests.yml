@@ -1,0 +1,42 @@
+name: Python CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.11", "3.12", "3.13"]
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+        cache: 'pip'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+
+    - name: Download spaCy NER model
+      run: |
+        python -m spacy download en_core_web_sm
+
+    - name: Run Pytest
+      env:
+        ADMIN_API_KEY: "admin-secret-key-123"
+        AUDITOR_API_KEY: "auditor-secret-key-456"
+        SERVICE_API_KEY: "service-secret-key-789"
+        JWT_SECRET_KEY: "governed-audit-log-jwt-secret-change-in-prod"
+        PII_ENCRYPTION_KEY: "gK4P1Xz8Z9R7W2Y6A3B5C8D1E4F7G0H3I6J9K2L5M8N="
+      run: |
+        pytest -v
