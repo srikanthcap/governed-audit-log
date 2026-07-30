@@ -60,15 +60,26 @@ class DSARResponse(BaseModel):
 
 from sqlalchemy import text
 
+from fastapi.responses import HTMLResponse, FileResponse
+from fastapi.staticfiles import StaticFiles
+
+# Mount static directory for frontend assets
+app.mount("/static", StaticFiles(directory="static"), name="static")
+
 @app.get("/")
 def root_endpoint():
     return {
         "service": "Governed Audit Log API",
         "status": "online",
+        "dashboard": "/dashboard",
         "documentation": "/docs",
         "health_check": "/health",
         "version": "1.0.0"
     }
+
+@app.get("/dashboard", response_class=HTMLResponse)
+def get_dashboard():
+    return FileResponse("static/dashboard.html")
 
 @app.get("/health")
 def health_check(db: Session = Depends(get_db)):
