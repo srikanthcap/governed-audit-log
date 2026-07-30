@@ -58,11 +58,13 @@ class DSARResponse(BaseModel):
 
 # Routes
 
+from sqlalchemy import text
+
 @app.get("/health")
 def health_check(db: Session = Depends(get_db)):
     try:
         # Simple DB sanity query
-        db.execute("SELECT 1" if engine.name != "sqlite" else "SELECT 1")
+        db.execute(text("SELECT 1"))
         db_status = "healthy"
     except Exception as e:
         db_status = f"unhealthy: {str(e)}"
