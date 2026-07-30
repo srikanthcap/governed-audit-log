@@ -462,7 +462,7 @@
               <button className={`tab-btn ${activeTab === 'tamperTab' ? 'active' : ''}`} onClick={() => setActiveTab('tamperTab')}>
                 <i className="fa-solid fa-fingerprint"></i> Tamper Verification
               </button>
-              {currentUser.role === 'admin' && (
+              {currentUser?.role === 'admin' && (
                 <button className={`tab-btn ${activeTab === 'auditTab' ? 'active' : ''}`} onClick={() => { setActiveTab('auditTab'); fetchAccessLogs(); }}>
                   <i className="fa-solid fa-list-check"></i> Log Access Audit
                 </button>
