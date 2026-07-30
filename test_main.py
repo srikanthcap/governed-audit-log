@@ -1,6 +1,12 @@
 import os
+import warnings
 import pytest
 from datetime import datetime, timedelta, timezone
+
+# Suppress Starlette testclient deprecation warning
+warnings.filterwarnings("ignore", category=DeprecationWarning)
+warnings.filterwarnings("ignore", message=".*starlette.testclient.*")
+
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -211,3 +217,7 @@ def test_dsar_handler():
     assert del_res.status_code == 200
     assert del_res.json()["marked_records"] == 1
     assert del_res.json()["deleted_pii_mappings"] == 1
+
+if __name__ == "__main__":
+    pytest.main(["-v", __file__])
+
