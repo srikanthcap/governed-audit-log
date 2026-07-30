@@ -60,6 +60,16 @@ class DSARResponse(BaseModel):
 
 from sqlalchemy import text
 
+@app.get("/")
+def root_endpoint():
+    return {
+        "service": "Governed Audit Log API",
+        "status": "online",
+        "documentation": "/docs",
+        "health_check": "/health",
+        "version": "1.0.0"
+    }
+
 @app.get("/health")
 def health_check(db: Session = Depends(get_db)):
     try:
