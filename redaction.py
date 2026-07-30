@@ -106,44 +106,81 @@ def redact_text(text: str, user_id: str) -> Tuple[str, List[PIIMapping]]:
     if not text:
         return text, []
 
-    redacted_text = text
-    mappings: Dict[str, PIIMapping] = {}
+    candidates = []
 
-    # ── Step 1: Regex-based PII detection ────────────────────────────────────
+    # ── Step 1: Find regex-based PII matches ─────────────────────────────────
     for entity_type, pattern in REGEX_PII_PATTERNS:
-        for match in set(re.findall(pattern, redacted_text)):
-            token = generate_pii_token(entity_type, match, user_id)
-            redacted_text = redacted_text.replace(match, token)
-            if token not in mappings:
-                mappings[token] = PIIMapping(
-                    token=token,
-                    user_id=user_id,
-                    entity_type=entity_type,
-                    encrypted_value=encrypt_value(match)
-                )
+        for match in re.finditer(pattern, text):
+            candidates.append({
+                "start": match.start(),
+                "end": match.end(),
+                "type": entity_type,
+                "value": match.group(),
+                "source": "regex"
+            })
 
-    # ── Step 2: spaCy NER-based detection (PERSON, ORG, GPE) ─────────────────
+    # ── Step 2: Find spaCy NER-based matches (PERSON, ORG, GPE) ───────────────
     nlp = _load_spacy()
     if nlp is not None:
-        doc = nlp(redacted_text)
-        # Process longest entities first to avoid partial-match clobbering
-        ner_entities = sorted(
-            [(ent.text, ent.label_) for ent in doc.ents if ent.label_ in _NER_ENTITY_MAP],
-            key=lambda x: -len(x[0])
-        )
-        for ent_text, ent_label in ner_entities:
-            pii_type = _NER_ENTITY_MAP[ent_label]
-            token = generate_pii_token(pii_type, ent_text, user_id)
-            if ent_text in redacted_text:
-                redacted_text = redacted_text.replace(ent_text, token)
-                if token not in mappings:
-                    mappings[token] = PIIMapping(
-                        token=token,
-                        user_id=user_id,
-                        entity_type=pii_type,
-                        encrypted_value=encrypt_value(ent_text)
-                    )
+        BLOCKLIST = {
+            "email", "phone", "ssn", "ip", "address", "user", "agent", 
+            "message", "status", "system", "caller", "client", "server", 
+            "data", "report", "database", "record", "file", "token", 
+            "key", "id", "code", "error", "success", "failed", "warning", 
+            "info", "debug"
+        }
+        doc = nlp(text)
+        for ent in doc.ents:
+            if ent.label_ in _NER_ENTITY_MAP:
+                val = ent.text
+                if val.lower().strip() in BLOCKLIST:
+                    continue
+                if not val.strip():
+                    continue
+                candidates.append({
+                    "start": ent.start_char,
+                    "end": ent.end_char,
+                    "type": _NER_ENTITY_MAP[ent.label_],
+                    "value": val,
+                    "source": "spacy"
+                })
 
+    # Sort candidates:
+    # 1. By start index ascending
+    # 2. By length descending (larger spans first)
+    # 3. By source (regex preferred over spacy in case of identical spans)
+    def sort_key(c):
+        return (c["start"], -(c["end"] - c["start"]), 0 if c["source"] == "regex" else 1)
+
+    candidates.sort(key=sort_key)
+
+    # Resolve overlapping spans (first one wins)
+    selected = []
+    last_end = -1
+    for c in candidates:
+        if c["start"] >= last_end:
+            selected.append(c)
+            last_end = c["end"]
+
+    # Replace spans from right to left to keep start indices valid
+    selected.sort(key=lambda x: x["start"], reverse=True)
+
+    mappings: Dict[str, PIIMapping] = {}
+    redacted_list = list(text)
+
+    for c in selected:
+        token = generate_pii_token(c["type"], c["value"], user_id)
+        redacted_list[c["start"]:c["end"]] = list(token)
+        
+        if token not in mappings:
+            mappings[token] = PIIMapping(
+                token=token,
+                user_id=user_id,
+                entity_type=c["type"],
+                encrypted_value=encrypt_value(c["value"])
+            )
+
+    redacted_text = "".join(redacted_list)
     return redacted_text, list(mappings.values())
 
 def get_redaction_capabilities() -> dict:
