@@ -4,7 +4,7 @@ from fastapi import FastAPI, Depends, HTTPException, status, Query
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
-from database import engine, Base, get_db
+from database import engine, Base, get_db, SessionLocal
 from models import AuditRecord, PIIMapping, AccessAuditLog, User
 from redaction import redact_text, decrypt_value
 from retention import calculate_retention_expiry, sweep_expired_records
@@ -39,7 +39,6 @@ def seed_admin_user():
     finally:
         db.close()
 
-from database import SessionLocal
 seed_admin_user()
 
 app = FastAPI(
