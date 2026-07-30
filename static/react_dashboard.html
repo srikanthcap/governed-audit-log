@@ -8,7 +8,6 @@
   <!-- React 18 & ReactDOM via CDN -->
   <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
   <!-- Google Fonts: Inter & JetBrains Mono -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -155,9 +154,10 @@
       background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.3); color: #fbbf24;
       padding: 1rem 1.25rem; border-radius: 12px; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.75rem;
     }
+  </style>
+
   <script>
-    // Global error listener to capture client-side script errors
-    window.onerror = function(msg, url, lineNo, columnNo, error) {
+    window.onerror = function(msg, url, lineNo) {
       console.error('Portal Error:', msg, 'at line', lineNo);
       var errDiv = document.getElementById('globalErrorDisplay');
       if (errDiv) {
@@ -171,32 +171,28 @@
 <body>
 
   <div id="globalErrorDisplay" style="display: none; background: #dc2626; color: white; padding: 1rem; text-align: center; font-weight: 600; z-index: 9999;"></div>
-
   <div id="root"></div>
 
-  <!-- React Application Component Script -->
-  <script type="text/babel">
-    const { useState, useEffect } = React;
+  <!-- Standard Pure JavaScript React Component Script (Zero Linter Syntax Errors) -->
+  <script>
+    const { useState, useEffect, createElement: h } = React;
 
     function ReactGovernanceApp() {
-      // Auth & App state
-      const [currentUser, setCurrentUser] = useState(() => {
+      const [currentUser, setCurrentUser] = useState(function() {
         try { return JSON.parse(localStorage.getItem('governed_user')); } catch(e) { return null; }
       });
       const [token, setToken] = useState(localStorage.getItem('governed_token') || null);
-      const [activeTab, setActiveTab] = useState(() => {
+      const [activeTab, setActiveTab] = useState(function() {
         try {
           const u = JSON.parse(localStorage.getItem('governed_user') || 'null');
           return (u && u.role === 'admin') ? 'usersTab' : 'ingestTab';
         } catch(e) { return 'ingestTab'; }
       });
-      const [authMode, setAuthMode] = useState('login'); // 'login' or 'register'
+      const [authMode, setAuthMode] = useState('login');
 
-      // Form states
       const [authForm, setAuthForm] = useState({ username: '', email: '', password: '', role: 'user' });
       const [authMsg, setAuthMsg] = useState(null);
 
-      // Admin verification & logs state
       const [usersList, setUsersList] = useState([]);
       const [ingestForm, setIngestForm] = useState({
         prompt: 'User email alice@example.com requested transfer for SSN 000-12-3456.',
@@ -212,14 +208,13 @@
       const [dsarUserId, setDsarUserId] = useState('usr_alice_99');
       const [dsarOutput, setDsarOutput] = useState(null);
 
-      // Load Users list when Admin Tab changes
-      useEffect(() => {
+      useEffect(function() {
         if (currentUser && currentUser.role === 'admin') {
           fetchUsersList();
         }
       }, [currentUser, activeTab]);
 
-      const handleAuthSubmit = async (e) => {
+      const handleAuthSubmit = async function(e) {
         e.preventDefault();
         setAuthMsg({ type: 'info', text: 'Authenticating...' });
 
@@ -239,7 +234,7 @@
               setToken(data.access_token);
               localStorage.setItem('governed_user', JSON.stringify(userObj));
               localStorage.setItem('governed_token', data.access_token);
-              setAuthMsg({ type: 'success', text: `Welcome back, ${data.username}!` });
+              setAuthMsg({ type: 'success', text: 'Welcome back, ' + data.username + '!' });
               setActiveTab(data.role === 'admin' ? 'usersTab' : 'ingestTab');
             } else {
               setAuthMsg({ type: 'success', text: data.message });
@@ -249,11 +244,11 @@
             setAuthMsg({ type: 'error', text: data.detail || 'Authentication failed' });
           }
         } catch (err) {
-          setAuthMsg({ type: 'error', text: `Network Error: ${err.message}` });
+          setAuthMsg({ type: 'error', text: 'Network Error: ' + err.message });
         }
       };
 
-      const handleLogout = () => {
+      const handleLogout = function() {
         setCurrentUser(null);
         setToken(null);
         localStorage.removeItem('governed_user');
@@ -261,15 +256,15 @@
         setActiveTab('ingestTab');
       };
 
-      const getHeaders = () => {
-        const h = { 'Content-Type': 'application/json' };
-        if (token) h['Authorization'] = `Bearer ${token}`;
-        if (currentUser && currentUser.role === 'admin') h['X-API-Key'] = 'admin-secret-key-123';
-        else h['X-API-Key'] = 'service-secret-key-789';
-        return h;
+      const getHeaders = function() {
+        const headers = { 'Content-Type': 'application/json' };
+        if (token) headers['Authorization'] = 'Bearer ' + token;
+        if (currentUser && currentUser.role === 'admin') headers['X-API-Key'] = 'admin-secret-key-123';
+        else headers['X-API-Key'] = 'service-secret-key-789';
+        return headers;
       };
 
-      const fetchUsersList = async () => {
+      const fetchUsersList = async function() {
         try {
           const res = await fetch('/admin/users', { headers: getHeaders() });
           const data = await res.json();
@@ -277,9 +272,9 @@
         } catch (err) { console.error('Error fetching users:', err); }
       };
 
-      const toggleUserVerification = async (userId, currentStatus) => {
+      const toggleUserVerification = async function(userId, currentStatus) {
         try {
-          const res = await fetch(`/admin/users/${userId}/verify`, {
+          const res = await fetch('/admin/users/' + userId + '/verify', {
             method: 'POST',
             headers: getHeaders(),
             body: JSON.stringify({ is_approved: !currentStatus })
@@ -287,11 +282,11 @@
           const data = await res.json();
           if (res.ok) {
             fetchUsersList();
-          } else { alert(`Verification failed: ${data.detail}`); }
-        } catch (err) { alert(`Error: ${err.message}`); }
+          } else { alert('Verification failed: ' + data.detail); }
+        } catch (err) { alert('Error: ' + err.message); }
       };
 
-      const handleIngest = async (e) => {
+      const handleIngest = async function(e) {
         e.preventDefault();
         setIngestOutput('Ingesting log & applying PII tokenization...');
         try {
@@ -309,342 +304,296 @@
           const data = await res.json();
           if (res.ok) {
             setVerifyLogId(data.id);
-            setIngestOutput(`✅ Log Ingested Successfully!\n\nLog ID: ${data.id}\nRedacted Prompt: ${data.prompt_redacted}\nRedacted Response: ${data.response_redacted}\nRetention Expiry: ${data.retention_expires_at} (${data.retention_category})\nCanonical Hash: ${data.record_hash}`);
-          } else { setIngestOutput(`❌ Error (${res.status}): ${JSON.stringify(data, null, 2)}`); }
-        } catch (err) { setIngestOutput(`❌ Error: ${err.message}`); }
+            setIngestOutput('✅ Log Ingested Successfully!\n\nLog ID: ' + data.id + '\nRedacted Prompt: ' + data.prompt_redacted + '\nRedacted Response: ' + data.response_redacted + '\nRetention Expiry: ' + data.retention_expires_at + ' (' + data.retention_category + ')\nCanonical Hash: ' + data.record_hash);
+          } else { setIngestOutput('❌ Error (' + res.status + '): ' + JSON.stringify(data, null, 2)); }
+        } catch (err) { setIngestOutput('❌ Error: ' + err.message); }
       };
 
-      const handleVerifyTamper = async () => {
+      const handleVerifyTamper = async function() {
         if (!verifyLogId) return alert('Please enter a Log ID');
         setTamperOutput('Verifying SHA-256 canonical hash integrity...');
         try {
-          const res = await fetch(`/verify/${verifyLogId}`, { headers: getHeaders() });
+          const res = await fetch('/verify/' + verifyLogId, { headers: getHeaders() });
           const data = await res.json();
           if (res.ok) {
-            setTamperOutput(`🔍 Tamper Status: ${data.is_valid ? 'VALID ✅ (Untampered)' : 'TAMPERED ❌ (Hash Mismatch)'}\n\nLog ID: ${data.log_id}\nStored Hash: ${data.stored_hash}\nComputed Hash: ${data.computed_hash}`);
-          } else { setTamperOutput(`❌ Error: ${JSON.stringify(data)}`); }
-        } catch (err) { setTamperOutput(`❌ Error: ${err.message}`); }
+            setTamperOutput('🔍 Tamper Status: ' + (data.is_valid ? 'VALID ✅ (Untampered)' : 'TAMPERED ❌ (Hash Mismatch)') + '\n\nLog ID: ' + data.log_id + '\nStored Hash: ' + data.stored_hash + '\nComputed Hash: ' + data.computed_hash);
+          } else { setTamperOutput('❌ Error: ' + JSON.stringify(data)); }
+        } catch (err) { setTamperOutput('❌ Error: ' + err.message); }
       };
 
-      const fetchAccessLogs = async () => {
+      const fetchAccessLogs = async function() {
         try {
           const res = await fetch('/access-logs', { headers: getHeaders() });
           const data = await res.json();
           if (res.ok && Array.isArray(data)) setAccessLogs(data);
-        } catch (err) { alert(`Error loading access logs: ${err.message}`); }
+        } catch (err) { alert('Error loading access logs: ' + err.message); }
       };
 
-      const handleDSAR = async (action) => {
+      const handleDSAR = async function(action) {
         setDsarOutput('Processing DSAR query...');
-        const endpoint = action === 'delete' ? `/dsar/${dsarUserId}/delete` : `/dsar/${dsarUserId}`;
+        const endpoint = action === 'delete' ? '/dsar/' + dsarUserId + '/delete' : '/dsar/' + dsarUserId;
         const method = action === 'delete' ? 'POST' : 'GET';
         try {
-          const res = await fetch(endpoint, { method, headers: getHeaders() });
+          const res = await fetch(endpoint, { method: method, headers: getHeaders() });
           const data = await res.json();
-          setDsarOutput(`📄 DSAR Result:\n${JSON.stringify(data, null, 2)}`);
-        } catch (err) { setDsarOutput(`❌ Error: ${err.message}`); }
+          setDsarOutput('📄 DSAR Result:\n' + JSON.stringify(data, null, 2));
+        } catch (err) { setDsarOutput('❌ Error: ' + err.message); }
       };
 
-      // Render Login/Register if not logged in
+      // Unauthenticated Render
       if (!currentUser) {
-        return (
-          <div>
-            <header>
-              <div className="brand">
-                <div className="brand-icon"><i className="fa-solid fa-shield-halved"></i></div>
-                <div className="brand-title">Governed Audit Log (React Portal)</div>
-              </div>
-            </header>
-
-            <div className="container" style={{ maxWidth: '480px', marginTop: '4rem' }}>
-              <div className="glass-card">
-                <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem', borderBottom: '1px solid var(--card-border)' }}>
-                  <button className={`tab-btn ${authMode === 'login' ? 'active' : ''}`} onClick={() => setAuthMode('login')} style={{ flex: 1, justifyContent: 'center' }}>Sign In</button>
-                  <button className={`tab-btn ${authMode === 'register' ? 'active' : ''}`} onClick={() => setAuthMode('register')} style={{ flex: 1, justifyContent: 'center' }}>Register Account</button>
-                </div>
-
-                {authMsg && (
-                  <div style={{ padding: '0.75rem', borderRadius: '8px', marginBottom: '1rem', fontSize: '0.85rem', background: authMsg.type === 'error' ? 'rgba(239,68,68,0.2)' : 'rgba(16,185,129,0.2)', color: authMsg.type === 'error' ? '#f87171' : '#34d399' }}>
-                    {authMsg.text}
-                  </div>
-                )}
-
-                <form onSubmit={handleAuthSubmit}>
-                  <div className="form-group" style={{ marginBottom: '1rem' }}>
-                    <label>Username</label>
-                    <input type="text" className="form-control" value={authForm.username} onChange={e => setAuthForm({...authForm, username: e.target.value})} placeholder="admin or john_doe" required />
-                  </div>
-
-                  {authMode === 'register' && (
-                    <div className="form-group" style={{ marginBottom: '1rem' }}>
-                      <label>Email Address</label>
-                      <input type="email" className="form-control" value={authForm.email} onChange={e => setAuthForm({...authForm, email: e.target.value})} placeholder="user@example.com" required />
-                    </div>
-                  )}
-
-                  <div className="form-group" style={{ marginBottom: '1rem' }}>
-                    <label>Password</label>
-                    <input type="password" className="form-control" value={authForm.password} onChange={e => setAuthForm({...authForm, password: e.target.value})} placeholder="••••••••" required />
-                  </div>
-
-                  {authMode === 'register' && (
-                    <div className="form-group" style={{ marginBottom: '1.25rem' }}>
-                      <label>Requested Role</label>
-                      <select className="form-control" value={authForm.role} onChange={e => setAuthForm({...authForm, role: e.target.value})}>
-                        <option value="user">Regular User (Requires Admin Verification)</option>
-                        <option value="admin">Admin (Full Control)</option>
-                      </select>
-                    </div>
-                  )}
-
-                  <button type="submit" className="btn" style={{ width: '100%', justifyContent: 'center' }}>
-                    <i className={authMode === 'login' ? "fa-solid fa-right-to-bracket" : "fa-solid fa-user-plus"}></i>
-                    {authMode === 'login' ? 'Sign In to Portal' : 'Create Account'}
-                  </button>
-                </form>
-                
-                <div style={{ marginTop: '1.25rem', fontSize: '0.8rem', color: 'var(--text-muted)', textAlign: 'center' }}>
-                  Demo Admin Login: <strong>admin</strong> / <strong>admin123</strong>
-                </div>
-              </div>
-            </div>
-          </div>
+        return h('div', null,
+          h('header', null,
+            h('div', { className: 'brand' },
+              h('div', { className: 'brand-icon' }, h('i', { className: 'fa-solid fa-shield-halved' })),
+              h('div', { className: 'brand-title' }, 'Governed Audit Log (React Portal)')
+            )
+          ),
+          h('div', { className: 'container', style: { maxWidth: '480px', marginTop: '4rem' } },
+            h('div', { className: 'glass-card' },
+              h('div', { style: { display: 'flex', gap: '1rem', marginBottom: '1.5rem', borderBottom: '1px solid var(--card-border)' } },
+                h('button', { className: 'tab-btn ' + (authMode === 'login' ? 'active' : ''), onClick: function() { setAuthMode('login'); }, style: { flex: 1, justifyContent: 'center' } }, 'Sign In'),
+                h('button', { className: 'tab-btn ' + (authMode === 'register' ? 'active' : ''), onClick: function() { setAuthMode('register'); }, style: { flex: 1, justifyContent: 'center' } }, 'Register Account')
+              ),
+              authMsg ? h('div', { style: { padding: '0.75rem', borderRadius: '8px', marginBottom: '1rem', fontSize: '0.85rem', background: authMsg.type === 'error' ? 'rgba(239,68,68,0.2)' : 'rgba(16,185,129,0.2)', color: authMsg.type === 'error' ? '#f87171' : '#34d399' } }, authMsg.text) : null,
+              h('form', { onSubmit: handleAuthSubmit },
+                h('div', { className: 'form-group', style: { marginBottom: '1rem' } },
+                  h('label', null, 'Username'),
+                  h('input', { type: 'text', className: 'form-control', value: authForm.username, onChange: function(e) { setAuthForm(Object.assign({}, authForm, { username: e.target.value })); }, placeholder: 'admin or john_doe', required: true })
+                ),
+                authMode === 'register' ? h('div', { className: 'form-group', style: { marginBottom: '1rem' } },
+                  h('label', null, 'Email Address'),
+                  h('input', { type: 'email', className: 'form-control', value: authForm.email, onChange: function(e) { setAuthForm(Object.assign({}, authForm, { email: e.target.value })); }, placeholder: 'user@example.com', required: true })
+                ) : null,
+                h('div', { className: 'form-group', style: { marginBottom: '1rem' } },
+                  h('label', null, 'Password'),
+                  h('input', { type: 'password', className: 'form-control', value: authForm.password, onChange: function(e) { setAuthForm(Object.assign({}, authForm, { password: e.target.value })); }, placeholder: '••••••••', required: true })
+                ),
+                authMode === 'register' ? h('div', { className: 'form-group', style: { marginBottom: '1.25rem' } },
+                  h('label', null, 'Requested Role'),
+                  h('select', { className: 'form-control', value: authForm.role, onChange: function(e) { setAuthForm(Object.assign({}, authForm, { role: e.target.value })); } },
+                    h('option', { value: 'user' }, 'Regular User (Requires Admin Verification)'),
+                    h('option', { value: 'admin' }, 'Admin (Full Control)')
+                  )
+                ) : null,
+                h('button', { type: 'submit', className: 'btn', style: { width: '100%', justifyContent: 'center' } },
+                  h('i', { className: authMode === 'login' ? 'fa-solid fa-right-to-bracket' : 'fa-solid fa-user-plus' }),
+                  authMode === 'login' ? ' Sign In to Portal' : ' Create Account'
+                )
+              ),
+              h('div', { style: { marginTop: '1.25rem', fontSize: '0.8rem', color: 'var(--text-muted)', textAlign: 'center' } },
+                'Demo Admin Login: ', h('strong', null, 'admin'), ' / ', h('strong', null, 'admin123')
+              )
+            )
+          )
         );
       }
 
-      // Logged In React Portal Render
-      return (
-        <div>
-          <header>
-            <div className="brand">
-              <div className="brand-icon"><i className="fa-solid fa-shield-halved"></i></div>
-              <div>
-                <div className="brand-title">Governed Audit Log</div>
-                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Enterprise React Governance Portal</div>
-              </div>
-            </div>
+      // Logged In Main Portal Render
+      const role = currentUser ? currentUser.role : 'user';
+      const isApproved = currentUser ? currentUser.is_approved : false;
+      const username = currentUser ? currentUser.username : 'User';
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-              <div className="user-profile-badge">
-                <i className="fa-solid fa-circle-user" style={{ color: 'var(--primary)' }}></i>
-                <span><strong>{currentUser?.username || 'User'}</strong></span>
-                <span className={`tag ${currentUser?.role === 'admin' ? 'tag-admin' : 'tag-user'}`}>{currentUser?.role || 'user'}</span>
-                <span className={`tag ${currentUser?.is_approved ? 'tag-approved' : 'tag-pending'}`}>
-                  {currentUser?.is_approved ? 'Ability Approved' : 'Ability Pending'}
-                </span>
-              </div>
-              <button className="btn btn-secondary" onClick={handleLogout} style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem' }}>
-                <i className="fa-solid fa-arrow-right-from-bracket"></i> Sign Out
-              </button>
-            </div>
-          </header>
+      return h('div', null,
+        h('header', null,
+          h('div', { className: 'brand' },
+            h('div', { className: 'brand-icon' }, h('i', { className: 'fa-solid fa-shield-halved' })),
+            h('div', null,
+              h('div', { className: 'brand-title' }, 'Governed Audit Log'),
+              h('div', { style: { fontSize: '0.75rem', color: 'var(--text-muted)' } }, 'Enterprise React Governance Portal')
+            )
+          ),
+          h('div', { style: { display: 'flex', alignItems: 'center', gap: '1rem' } },
+            h('div', { className: 'user-profile-badge' },
+              h('i', { className: 'fa-solid fa-circle-user', style: { color: 'var(--primary)' } }),
+              h('span', null, h('strong', null, username)),
+              h('span', { className: 'tag ' + (role === 'admin' ? 'tag-admin' : 'tag-user') }, role),
+              h('span', { className: 'tag ' + (isApproved ? 'tag-approved' : 'tag-pending') }, isApproved ? 'Ability Approved' : 'Ability Pending')
+            ),
+            h('button', { className: 'btn btn-secondary', onClick: handleLogout, style: { padding: '0.4rem 0.8rem', fontSize: '0.8rem' } },
+              h('i', { className: 'fa-solid fa-arrow-right-from-bracket' }), ' Sign Out'
+            )
+          )
+        ),
 
-          <div className="container">
-            {!currentUser?.is_approved && (
-              <div className="alert-banner">
-                <i className="fa-solid fa-triangle-exclamation" style={{ fontSize: '1.2rem' }}></i>
-                <div>
-                  <strong>User Ability Status: Pending Admin Verification</strong>
-                  <div style={{ fontSize: '0.85rem' }}>An administrator must inspect and approve your user abilities before advanced governance controls are unlocked.</div>
-                </div>
-              </div>
-            )}
+        h('div', { className: 'container' },
+          !isApproved ? h('div', { className: 'alert-banner' },
+            h('i', { className: 'fa-solid fa-triangle-exclamation', style: { fontSize: '1.2rem' } }),
+            h('div', null,
+              h('strong', null, 'User Ability Status: Pending Admin Verification'),
+              h('div', { style: { fontSize: '0.85rem' } }, 'An administrator must inspect and approve your user abilities before advanced governance controls are unlocked.')
+            )
+          ) : null,
 
-            <div className="tabs">
-              {currentUser?.role === 'admin' && (
-                <button className={`tab-btn ${activeTab === 'usersTab' ? 'active' : ''}`} onClick={() => setActiveTab('usersTab')}>
-                  <i className="fa-solid fa-users-gear"></i> Admin User Verification
-                </button>
-              )}
-              <button className={`tab-btn ${activeTab === 'ingestTab' ? 'active' : ''}`} onClick={() => setActiveTab('ingestTab')}>
-                <i className="fa-solid fa-file-shield"></i> Log Ingestion & Redaction
-              </button>
-              <button className={`tab-btn ${activeTab === 'tamperTab' ? 'active' : ''}`} onClick={() => setActiveTab('tamperTab')}>
-                <i className="fa-solid fa-fingerprint"></i> Tamper Verification
-              </button>
-              {currentUser?.role === 'admin' && (
-                <button className={`tab-btn ${activeTab === 'auditTab' ? 'active' : ''}`} onClick={() => { setActiveTab('auditTab'); fetchAccessLogs(); }}>
-                  <i className="fa-solid fa-list-check"></i> Log Access Audit
-                </button>
-              )}
-              <button className={`tab-btn ${activeTab === 'dsarTab' ? 'active' : ''}`} onClick={() => setActiveTab('dsarTab')}>
-                <i className="fa-solid fa-user-shield"></i> DSAR Portal
-              </button>
-            </div>
+          h('div', { className: 'tabs' },
+            role === 'admin' ? h('button', { className: 'tab-btn ' + (activeTab === 'usersTab' ? 'active' : ''), onClick: function() { setActiveTab('usersTab'); } },
+              h('i', { className: 'fa-solid fa-users-gear' }), ' Admin User Verification'
+            ) : null,
+            h('button', { className: 'tab-btn ' + (activeTab === 'ingestTab' ? 'active' : ''), onClick: function() { setActiveTab('ingestTab'); } },
+              h('i', { className: 'fa-solid fa-file-shield' }), ' Log Ingestion & Redaction'
+            ),
+            h('button', { className: 'tab-btn ' + (activeTab === 'tamperTab' ? 'active' : ''), onClick: function() { setActiveTab('tamperTab'); } },
+              h('i', { className: 'fa-solid fa-fingerprint' }), ' Tamper Verification'
+            ),
+            role === 'admin' ? h('button', { className: 'tab-btn ' + (activeTab === 'auditTab' ? 'active' : ''), onClick: function() { setActiveTab('auditTab'); fetchAccessLogs(); } },
+              h('i', { className: 'fa-solid fa-list-check' }), ' Log Access Audit'
+            ) : null,
+            h('button', { className: 'tab-btn ' + (activeTab === 'dsarTab' ? 'active' : ''), onClick: function() { setActiveTab('dsarTab'); } },
+              h('i', { className: 'fa-solid fa-user-shield' }), ' DSAR Portal'
+            )
+          ),
 
-            {activeTab === 'usersTab' && currentUser?.role === 'admin' && (
-              <div className="glass-card">
-                <div className="card-header">
-                  <div className="card-title"><i className="fa-solid fa-user-check"></i> Admin User Verification & Ability Management</div>
-                  <button className="btn btn-secondary" onClick={fetchUsersList}><i className="fa-solid fa-rotate"></i> Refresh User List</button>
-                </div>
-                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginBottom: '1.25rem' }}>
-                  Inspect registered users, verify user abilities, and approve/revoke system privileges.
-                </p>
+          // TAB 1: User Verification
+          (activeTab === 'usersTab' && role === 'admin') ? h('div', { className: 'glass-card' },
+            h('div', { className: 'card-header' },
+              h('div', { className: 'card-title' }, h('i', { className: 'fa-solid fa-user-check' }), ' Admin User Verification & Ability Management'),
+              h('button', { className: 'btn btn-secondary', onClick: fetchUsersList }, h('i', { className: 'fa-solid fa-rotate' }), ' Refresh User List')
+            ),
+            h('p', { style: { color: 'var(--text-muted)', fontSize: '0.9rem', marginBottom: '1.25rem' } }, 'Inspect registered users, verify user abilities, and approve/revoke system privileges.'),
+            h('div', { className: 'data-table-container' },
+              h('table', { className: 'data-table' },
+                h('thead', null,
+                  h('tr', null,
+                    h('th', null, 'User ID'),
+                    h('th', null, 'Username'),
+                    h('th', null, 'Email'),
+                    h('th', null, 'Role'),
+                    h('th', null, 'Ability Status'),
+                    h('th', null, 'Actions')
+                  )
+                ),
+                h('tbody', null,
+                  usersList.map(function(u) {
+                    return h('tr', { key: u.id },
+                      h('td', { style: { fontFamily: 'var(--font-mono)', fontSize: '0.8rem' } }, u.id.substring(0, 8) + '...'),
+                      h('td', null, h('strong', null, u.username)),
+                      h('td', null, u.email),
+                      h('td', null, h('span', { className: 'tag ' + (u.role === 'admin' ? 'tag-admin' : 'tag-user') }, u.role)),
+                      h('td', null, h('span', { className: 'tag ' + (u.is_approved ? 'tag-approved' : 'tag-pending') }, u.is_approved ? 'APPROVED' : 'PENDING')),
+                      h('td', null,
+                        h('button', {
+                          className: 'btn ' + (u.is_approved ? 'btn-danger' : 'btn-success'),
+                          style: { padding: '0.35rem 0.75rem', fontSize: '0.8rem' },
+                          onClick: function() { toggleUserVerification(u.id, u.is_approved); }
+                        },
+                          h('i', { className: u.is_approved ? 'fa-solid fa-user-xmark' : 'fa-solid fa-user-check' }),
+                          u.is_approved ? ' Revoke Ability' : ' Approve Ability'
+                        )
+                      )
+                    );
+                  })
+                )
+              )
+            )
+          ) : null,
 
-                <div className="data-table-container">
-                  <table className="data-table">
-                    <thead>
-                      <tr>
-                        <th>User ID</th>
-                        <th>Username</th>
-                        <th>Email</th>
-                        <th>Role</th>
-                        <th>Ability Status</th>
-                        <th>Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {usersList.map(u => (
-                        <tr key={u.id}>
-                          <td style={{ fontFamily: 'var(--font-mono)', fontSize: '0.8rem' }}>{u.id.substring(0, 8)}...</td>
-                          <td><strong>{u.username}</strong></td>
-                          <td>{u.email}</td>
-                          <td><span className={`tag ${u.role === 'admin' ? 'tag-admin' : 'tag-user'}`}>{u.role}</span></td>
-                          <td>
-                            <span className={`tag ${u.is_approved ? 'tag-approved' : 'tag-pending'}`}>
-                              {u.is_approved ? 'APPROVED' : 'PENDING'}
-                            </span>
-                          </td>
-                          <td>
-                            <button
-                              className={`btn ${u.is_approved ? 'btn-danger' : 'btn-success'}`}
-                              style={{ padding: '0.35rem 0.75rem', fontSize: '0.8rem' }}
-                              onClick={() => toggleUserVerification(u.id, u.is_approved)}
-                            >
-                              <i className={u.is_approved ? "fa-solid fa-user-xmark" : "fa-solid fa-user-check"}></i>
-                              {u.is_approved ? 'Revoke Ability' : 'Approve Ability'}
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            )}
+          // TAB 2: Log Ingestion
+          (activeTab === 'ingestTab') ? h('div', { className: 'glass-card' },
+            h('div', { className: 'card-header' },
+              h('div', { className: 'card-title' }, h('i', { className: 'fa-solid fa-wand-magic-sparkles' }), ' Raw Log Ingestion & PII Redaction')
+            ),
+            h('form', { onSubmit: handleIngest },
+              h('div', { className: 'form-grid' },
+                h('div', { className: 'form-group' },
+                  h('label', null, 'Agent ID'),
+                  h('input', { type: 'text', className: 'form-control', value: ingestForm.agentId, onChange: function(e) { setIngestForm(Object.assign({}, ingestForm, { agentId: e.target.value })); }, required: true })
+                ),
+                h('div', { className: 'form-group' },
+                  h('label', null, 'User ID'),
+                  h('input', { type: 'text', className: 'form-control', value: ingestForm.userId, onChange: function(e) { setIngestForm(Object.assign({}, ingestForm, { userId: e.target.value })); }, required: true })
+                ),
+                h('div', { className: 'form-group' },
+                  h('label', null, 'Retention Window'),
+                  h('select', { className: 'form-control', value: ingestForm.retentionCategory, onChange: function(e) { setIngestForm(Object.assign({}, ingestForm, { retentionCategory: e.target.value })); } },
+                    h('option', { value: 'FINANCIAL' }, 'FINANCIAL (90-Day Retention)'),
+                    h('option', { value: 'HEALTHCARE' }, 'HEALTHCARE (365-Day Retention)'),
+                    h('option', { value: 'GENERAL' }, 'GENERAL (30-Day Retention)')
+                  )
+                )
+              ),
+              h('div', { className: 'form-group', style: { marginBottom: '1rem' } },
+                h('label', null, 'Raw Prompt (Contains PII)'),
+                h('textarea', { className: 'form-control', value: ingestForm.prompt, onChange: function(e) { setIngestForm(Object.assign({}, ingestForm, { prompt: e.target.value })); }, required: true })
+              ),
+              h('div', { className: 'form-group', style: { marginBottom: '1rem' } },
+                h('label', null, 'Raw Response'),
+                h('textarea', { className: 'form-control', value: ingestForm.response, onChange: function(e) { setIngestForm(Object.assign({}, ingestForm, { response: e.target.value })); }, required: true })
+              ),
+              h('button', { type: 'submit', className: 'btn' },
+                h('i', { className: 'fa-solid fa-paper-plane' }), ' Ingest & Tokenize PII'
+              )
+            ),
+            ingestOutput ? h('div', { className: 'output-box' }, ingestOutput) : null
+          ) : null,
 
-            {activeTab === 'ingestTab' && (
-              <div className="glass-card">
-                <div className="card-header">
-                  <div className="card-title"><i className="fa-solid fa-wand-magic-sparkles"></i> Raw Log Ingestion & PII Redaction</div>
-                </div>
+          // TAB 3: Tamper Verification
+          (activeTab === 'tamperTab') ? h('div', { className: 'glass-card' },
+            h('div', { className: 'card-header' },
+              h('div', { className: 'card-title' }, h('i', { className: 'fa-solid fa-shield-cat' }), ' SHA-256 Tamper Verification Engine')
+            ),
+            h('div', { className: 'form-group', style: { marginBottom: '1rem' } },
+              h('label', null, 'Audit Log ID'),
+              h('input', { type: 'text', className: 'form-control', value: verifyLogId, onChange: function(e) { setVerifyLogId(e.target.value); }, placeholder: 'Enter UUID...' })
+            ),
+            h('button', { className: 'btn', onClick: handleVerifyTamper },
+              h('i', { className: 'fa-solid fa-check-double' }), ' Verify Canonical Hash Integrity'
+            ),
+            tamperOutput ? h('div', { className: 'output-box' }, tamperOutput) : null
+          ) : null,
 
-                <form onSubmit={handleIngest}>
-                  <div className="form-grid">
-                    <div className="form-group">
-                      <label>Agent ID</label>
-                      <input type="text" className="form-control" value={ingestForm.agentId} onChange={e => setIngestForm({...ingestForm, agentId: e.target.value})} required />
-                    </div>
-                    <div className="form-group">
-                      <label>User ID</label>
-                      <input type="text" className="form-control" value={ingestForm.userId} onChange={e => setIngestForm({...ingestForm, userId: e.target.value})} required />
-                    </div>
-                    <div className="form-group">
-                      <label>Retention Window</label>
-                      <select className="form-control" value={ingestForm.retentionCategory} onChange={e => setIngestForm({...ingestForm, retentionCategory: e.target.value})}>
-                        <option value="FINANCIAL">FINANCIAL (90-Day Retention)</option>
-                        <option value="HEALTHCARE">HEALTHCARE (365-Day Retention)</option>
-                        <option value="GENERAL">GENERAL (30-Day Retention)</option>
-                      </select>
-                    </div>
-                  </div>
+          // TAB 4: Access Audit Logs
+          (activeTab === 'auditTab' && role === 'admin') ? h('div', { className: 'glass-card' },
+            h('div', { className: 'card-header' },
+              h('div', { className: 'card-title' }, h('i', { className: 'fa-solid fa-eye' }), ' Immutable Log Access Audit Trail'),
+              h('button', { className: 'btn btn-secondary', onClick: fetchAccessLogs }, h('i', { className: 'fa-solid fa-rotate' }), ' Refresh Audit Logs')
+            ),
+            h('div', { className: 'data-table-container' },
+              h('table', { className: 'data-table' },
+                h('thead', null,
+                  h('tr', null,
+                    h('th', null, 'ID'),
+                    h('th', null, 'Accessor Role'),
+                    h('th', null, 'Endpoint'),
+                    h('th', null, 'Details'),
+                    h('th', null, 'Timestamp (UTC)')
+                  )
+                ),
+                h('tbody', null,
+                  accessLogs.map(function(l) {
+                    return h('tr', { key: l.id },
+                      h('td', null, '#' + l.id),
+                      h('td', null, h('span', { className: 'tag tag-user' }, l.accessor_role)),
+                      h('td', { style: { fontFamily: 'var(--font-mono)', fontSize: '0.8rem' } }, l.endpoint),
+                      h('td', { style: { fontSize: '0.8rem' } }, l.query_details || '-'),
+                      h('td', { style: { fontSize: '0.8rem' } }, new Date(l.accessed_at).toLocaleString())
+                    );
+                  })
+                )
+              )
+            )
+          ) : null,
 
-                  <div className="form-group" style={{ marginBottom: '1rem' }}>
-                    <label>Raw Prompt (Contains PII)</label>
-                    <textarea className="form-control" value={ingestForm.prompt} onChange={e => setIngestForm({...ingestForm, prompt: e.target.value})} required />
-                  </div>
-
-                  <div className="form-group" style={{ marginBottom: '1rem' }}>
-                    <label>Raw Response</label>
-                    <textarea className="form-control" value={ingestForm.response} onChange={e => setIngestForm({...ingestForm, response: e.target.value})} required />
-                  </div>
-
-                  <button type="submit" className="btn"><i className="fa-solid fa-paper-plane"></i> Ingest & Tokenize PII</button>
-                </form>
-
-                {ingestOutput && <div className="output-box">{ingestOutput}</div>}
-              </div>
-            )}
-
-            {activeTab === 'tamperTab' && (
-              <div className="glass-card">
-                <div className="card-header">
-                  <div className="card-title"><i className="fa-solid fa-shield-cat"></i> SHA-256 Tamper Verification Engine</div>
-                </div>
-
-                <div className="form-group" style={{ marginBottom: '1rem' }}>
-                  <label>Audit Log ID</label>
-                  <input type="text" className="form-control" value={verifyLogId} onChange={e => setVerifyLogId(e.target.value)} placeholder="Enter UUID..." />
-                </div>
-
-                <button className="btn" onClick={handleVerifyTamper}><i className="fa-solid fa-check-double"></i> Verify Canonical Hash Integrity</button>
-
-                {tamperOutput && <div className="output-box">{tamperOutput}</div>}
-              </div>
-            )}
-
-            {activeTab === 'auditTab' && currentUser?.role === 'admin' && (
-              <div className="glass-card">
-                <div className="card-header">
-                  <div className="card-title"><i className="fa-solid fa-eye"></i> Immutable Log Access Audit Trail</div>
-                  <button className="btn btn-secondary" onClick={fetchAccessLogs}><i className="fa-solid fa-rotate"></i> Refresh Audit Logs</button>
-                </div>
-
-                <div className="data-table-container">
-                  <table className="data-table">
-                    <thead>
-                      <tr>
-                        <th>ID</th>
-                        <th>Accessor Role</th>
-                        <th>Endpoint</th>
-                        <th>Details</th>
-                        <th>Timestamp (UTC)</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {accessLogs.map(l => (
-                        <tr key={l.id}>
-                          <td>#{l.id}</td>
-                          <td><span className="tag tag-user">{l.accessor_role}</span></td>
-                          <td style={{ fontFamily: 'var(--font-mono)', fontSize: '0.8rem' }}>{l.endpoint}</td>
-                          <td style={{ fontSize: '0.8rem' }}>{l.query_details || '-'}</td>
-                          <td style={{ fontSize: '0.8rem' }}>{new Date(l.accessed_at).toLocaleString()}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            )}
-
-            {activeTab === 'dsarTab' && (
-              <div className="glass-card">
-                <div className="card-header">
-                  <div className="card-title"><i className="fa-solid fa-id-card"></i> DSAR Subject Portal</div>
-                </div>
-
-                <div className="form-group" style={{ marginBottom: '1rem' }}>
-                  <label>User ID</label>
-                  <input type="text" className="form-control" value={dsarUserId} onChange={e => setDsarUserId(e.target.value)} />
-                </div>
-
-                <div style={{ display: 'flex', gap: '0.75rem' }}>
-                  <button className="btn" onClick={() => handleDSAR('report')}><i className="fa-solid fa-magnifying-glass"></i> Generate DSAR Summary</button>
-                  <button className="btn btn-danger" onClick={() => handleDSAR('delete')}><i className="fa-solid fa-trash-can"></i> Request Right-to-Be-Forgotten Deletion</button>
-                </div>
-
-                {dsarOutput && <div className="output-box">{dsarOutput}</div>}
-              </div>
-            )}
-
-          </div>
-        </div>
+          // TAB 5: DSAR Portal
+          (activeTab === 'dsarTab') ? h('div', { className: 'glass-card' },
+            h('div', { className: 'card-header' },
+              h('div', { className: 'card-title' }, h('i', { className: 'fa-solid fa-id-card' }), ' DSAR Subject Portal')
+            ),
+            h('div', { className: 'form-group', style: { marginBottom: '1rem' } },
+              h('label', null, 'User ID'),
+              h('input', { type: 'text', className: 'form-control', value: dsarUserId, onChange: function(e) { setDsarUserId(e.target.value); } })
+            ),
+            h('div', { style: { display: 'flex', gap: '0.75rem' } },
+              h('button', { className: 'btn', onClick: function() { handleDSAR('report'); } }, h('i', { className: 'fa-solid fa-magnifying-glass' }), ' Generate DSAR Summary'),
+              h('button', { className: 'btn btn-danger', onClick: function() { handleDSAR('delete'); } }, h('i', { className: 'fa-solid fa-trash-can' }), ' Request Right-to-Be-Forgotten Deletion')
+            ),
+            dsarOutput ? h('div', { className: 'output-box' }, dsarOutput) : null
+          ) : null
+        )
       );
     }
 
     const root = ReactDOM.createRoot(document.getElementById('root'));
-    root.render(<ReactGovernanceApp />);
+    root.render(h(ReactGovernanceApp));
   </script>
 </body>
 </html>
