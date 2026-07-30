@@ -171,7 +171,10 @@
         try { return JSON.parse(localStorage.getItem('governed_user')); } catch(e) { return null; }
       });
       const [token, setToken] = useState(localStorage.getItem('governed_token') || null);
-      const [activeTab, setActiveTab] = useState('usersTab');
+      const [activeTab, setActiveTab] = useState(() => {
+        const u = JSON.parse(localStorage.getItem('governed_user') || 'null');
+        return (u && u.role === 'admin') ? 'usersTab' : 'ingestTab';
+      });
       const [authMode, setAuthMode] = useState('login'); // 'login' or 'register'
 
       // Form states
@@ -240,6 +243,7 @@
         setToken(null);
         localStorage.removeItem('governed_user');
         localStorage.removeItem('governed_token');
+        setActiveTab('ingestTab');
       };
 
       const getHeaders = () => {
@@ -254,7 +258,7 @@
         try {
           const res = await fetch('/admin/users', { headers: getHeaders() });
           const data = await res.json();
-          if (res.ok) setUsersList(data);
+          if (res.ok && Array.isArray(data)) setUsersList(data);
         } catch (err) { console.error('Error fetching users:', err); }
       };
 
@@ -311,7 +315,7 @@
         try {
           const res = await fetch('/access-logs', { headers: getHeaders() });
           const data = await res.json();
-          if (res.ok) setAccessLogs(data);
+          if (res.ok && Array.isArray(data)) setAccessLogs(data);
         } catch (err) { alert(`Error loading access logs: ${err.message}`); }
       };
 
