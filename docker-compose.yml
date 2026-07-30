@@ -1,36 +1,78 @@
 version: '3.8'
 
+# ═══════════════════════════════════════════════════════════════════
+#  Governed Audit Log — Docker Compose (Production-grade)
+#
+#  Services:
+#    app  — FastAPI application (4 Uvicorn workers)
+#    db   — PostgreSQL 15 (persistent volume)
+#
+#  Usage:
+#    docker-compose up --build
+#    docker-compose down -v    # remove volumes too
+# ═══════════════════════════════════════════════════════════════════
+
 services:
   app:
     build: .
+    container_name: governed_audit_app
+    restart: unless-stopped
     ports:
       - "8000:8000"
     environment:
+      # Database
       - DATABASE_URL=postgresql://audit_user:audit_pass@db:5432/governed_audit_db
+
+      # PII encryption — replace with a real generated key in production
       - PII_ENCRYPTION_KEY=gK4P1Xz8Z9R7W2Y6A3B5C8D1E4F7G0H3I6J9K2L5M8N=
+
+      # JWT — replace with a strong random secret in production
+      - JWT_SECRET_KEY=governed-audit-log-jwt-secret-change-in-prod
+      - JWT_EXPIRE_HOURS=24
+
+      # API Keys
       - ADMIN_API_KEY=admin-secret-key-123
       - AUDITOR_API_KEY=auditor-secret-key-456
       - SERVICE_API_KEY=service-secret-key-789
+
+      # Admin seed credentials
+      - ADMIN_USERNAME=admin
+      - ADMIN_PASSWORD=admin123
+      - ADMIN_EMAIL=admin@governed.ai
+
+      # LLM provider (set your real key here or in a .env file)
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      - LLM_PROVIDER=${LLM_PROVIDER:-mock}
+
     depends_on:
       db:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 20s
 
   db:
     image: postgres:15-alpine
+    container_name: governed_audit_db
     restart: always
     environment:
-      POSTGRES_USER: audit_user
+      POSTGRES_USER:     audit_user
       POSTGRES_PASSWORD: audit_pass
-      POSTGRES_DB: governed_audit_db
+      POSTGRES_DB:       governed_audit_db
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U audit_user -d governed_audit_db"]
+      test:     ["CMD-SHELL", "pg_isready -U audit_user -d governed_audit_db"]
       interval: 5s
-      timeout: 5s
-      retries: 5
+      timeout:  5s
+      retries:  10
 
 volumes:
   postgres_data:
+    driver: local

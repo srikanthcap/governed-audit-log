@@ -18,6 +18,12 @@ class AuditRecord(Base):
     is_expired = Column(Boolean, default=False, index=True)
     marked_for_deletion = Column(Boolean, default=False, index=True)
 
+class RetentionPolicy(Base):
+    __tablename__ = "retention_policies"
+
+    category = Column(String(50), primary_key=True)
+    retention_days = Column(Integer, nullable=False)
+
 class PIIMapping(Base):
     __tablename__ = "pii_mappings"
 

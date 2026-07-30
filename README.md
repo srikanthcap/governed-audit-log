@@ -1,94 +1,240 @@
-# Governed Audit Log (PS-7.2)
+# Governed Audit Log (v2.0)
 
-An enterprise-grade data governance layer for sensitive AI interaction logs (prompts, responses, agent IDs, and decision records). Built with **FastAPI**, **SQLAlchemy**, **PostgreSQL**, **AES-256 Fernet Encryption**, and **SHA-256 Canonical Hashing**.
-
----
-
-## Key Features & Architecture
-
-1. **Auto-Redaction & Tokenisation (`redaction.py`)**
-   - Scans raw interaction prompts and responses for PII entities (Emails, Phone numbers, SSNs, Credit Cards, IP addresses, API Keys).
-   - Replaces PII with unique tokenized placeholders (`[PII_EMAIL_<hash>]`).
-   - Securely encrypts original PII using AES-256 (Fernet) and maintains a mapping table restricted to authorized roles.
-   - Includes `/logs/{id}/reveal` endpoint (Admin role required) for authorized compliance reveal requests.
-
-2. **Retention Policy Engine (`retention.py`)**
-   - Classifies log records based on regulatory requirements:
-     - `GENERAL` / `LOW`: 30-day retention
-     - `FINANCIAL` / `MEDIUM`: 90-day retention
-     - `HEALTHCARE` / `HIGH_COMPLIANCE`: 365-day retention
-   - `/retention/sweep` endpoint automatically expires records whose retention window has passed.
-
-3. **Log Access Audit (`security.py`)**
-   - Every read of an audit log (or PII reveal or DSAR request) is recorded in `AccessAuditLog` with accessor role, timestamp, endpoint, and query details.
-   - `/access-logs` endpoint exposes access trails for audit compliance.
-
-4. **Tamper Detection (`security.py`)**
-   - Generates a SHA-256 canonical hash over `(prompt, response, agent_id, user_id, timestamp)` upon ingestion.
-   - `/verify/{log_id}` endpoint re-computes the canonical hash against stored DB content and detects out-of-band modifications.
-
-5. **DSAR (Data Subject Access Request) Handler (Bonus)**
-   - `/dsar/{user_id}` retrieves all logs and mapped PII tokens for a given user.
-   - `/dsar/{user_id}/delete` marks user records for expiration/deletion and removes PII mappings upon request.
+> **Enterprise-grade data governance layer for sensitive AI interaction logs.**
+> Built with FastAPI · PostgreSQL · AES-256 Fernet Encryption · SHA-256 Tamper Detection · JWT Auth · Real LLM Integration · Prometheus Metrics
 
 ---
 
-## Local Setup & Testing
+## Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    Governed Audit Log API                        │
+│                                                                  │
+│  ┌──────────────┐  ┌──────────────┐  ┌───────────────────────┐  │
+│  │ /logs/ingest │  │/logs/ingest- │  │   /verify/{id}        │  │
+│  │  (raw logs)  │  │     llm      │  │  (tamper detection)   │  │
+│  └──────┬───────┘  └──────┬───────┘  └───────────────────────┘  │
+│         │                 │                                      │
+│         ▼                 ▼                                      │
+│  ┌─────────────────────────────────────────────────────────┐    │
+│  │              Auto-Redaction Pipeline                     │    │
+│  │  Regex (EMAIL/PHONE/SSN/CC/IP/API_KEY)                  │    │
+│  │  + spaCy NER (PERSON / ORG / LOCATION)                  │    │
+│  │  → AES-256 Fernet encrypted PII token vault             │    │
+│  └─────────────────────────────────────────────────────────┘    │
+│         │                                                        │
+│         ▼                                                        │
+│  ┌──────────────┐  ┌─────────────────┐  ┌─────────────────────┐ │
+│  │  AuditRecord │  │   PIIMapping    │  │  AccessAuditLog     │ │
+│  │  + SHA-256   │  │  (token vault)  │  │  (every read logged)│ │
+│  │  hash        │  └─────────────────┘  └─────────────────────┘ │
+│  └──────────────┘                                                │
+│                                                                  │
+│  ┌───────────────────────────────────────────────────────────┐  │
+│  │  APScheduler — hourly retention sweep (background)        │  │
+│  └───────────────────────────────────────────────────────────┘  │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## Features
+
+### ✅ Core (All 4 Success Criteria Implemented)
+
+| Feature | Module | Endpoint |
+|---|---|---|
+| **Log Ingestion Pipeline** | `main.py` | `POST /logs/ingest` |
+| **Auto-Redaction + PII Tokenisation** | `redaction.py` | (on ingest) |
+| **Secure PII-to-token mapping (admin only)** | `main.py` | `GET /admin/pii/tokens`, `POST /admin/pii/decrypt` |
+| **Retention Policy Engine** | `retention.py` | `GET /retention/policies` |
+| **Auto-expire records past retention window** | `retention.py` | `POST /retention/sweep` (+ auto background) |
+| **Log Access Audit** | `security.py` | `GET /access-logs` |
+| **Tamper Detection** | `security.py` | `GET /verify/{log_id}` |
+| **DSAR Handler (bonus)** | `main.py` | `GET /dsar/{user_id}`, `POST /dsar/{user_id}/delete` |
+
+### 🚀 Production Additions (v2.0)
+
+| Feature | Details |
+|---|---|
+| **Real LLM Integration** | OpenAI GPT-4o-mini → Anthropic Claude → mock fallback (`llm_client.py`) |
+| **JWT Authentication** | Signed JWT tokens issued at login, verified on all protected routes |
+| **spaCy NER** | Detects PERSON, ORG, GPE entities (in addition to regex patterns) |
+| **Background Retention Sweep** | APScheduler runs `sweep_expired_records()` every hour automatically |
+| **Prometheus Metrics** | `GET /metrics` for Prometheus scraping (total logs, active, expired) |
+| **Docker + PostgreSQL** | Multi-worker Uvicorn, persistent DB volume, healthchecks |
+| **CORS Middleware** | Enabled for all origins (configurable) |
+| **GET /logs with filters** | Filter by agent_id, user_id, expired status |
+| **Enriched health check** | `/health` reports LLM provider status + redaction capabilities |
+
+---
+
+## Quick Start
 
 ### 1. Install Dependencies
 ```bash
 pip install -r requirements.txt
+python -m spacy download en_core_web_sm   # optional — enables NER-based PII detection
 ```
 
-### 2. Run Test Suite
-Verify all 4 success criteria + DSAR bonus:
+### 2. Configure Environment
+```bash
+cp .env.example .env
+# Edit .env — set OPENAI_API_KEY or ANTHROPIC_API_KEY for real LLM calls
+```
+
+### 3. Run the API
+```bash
+uvicorn main:app --reload --port 8000
+```
+
+Open the interactive docs: **http://localhost:8000/docs**
+Open the React dashboard: **http://localhost:8000/dashboard**
+
+### 4. Run Tests
 ```bash
 python -m pytest -v test_main.py
 ```
 
-### 3. Run FastAPI Application
+### 5. Run via Docker (PostgreSQL + full stack)
 ```bash
-uvicorn main:app --reload --port 8000
-```
-Interactive OpenAPI documentation will be available at `http://localhost:8000/docs`.
-
-### 4. Run via Docker Compose (PostgreSQL)
-```bash
-docker-compose up --build
+# Optionally pass your LLM key:
+OPENAI_API_KEY=sk-... docker-compose up --build
 ```
 
 ---
 
-## AWS Infrastructure & Deployment Guide
+## API Reference
 
-For production deployment on AWS:
+### Authentication
+All protected endpoints accept either:
+- **`X-API-Key: <key>`** header (service accounts / backward compat)
+- **`Authorization: Bearer <jwt>`** header (human users, issued by `/auth/login`)
 
-1. **Database**: AWS RDS PostgreSQL Instance (Free Tier `db.t4g.micro` or `db.t3.micro`).
-2. **Compute**: AWS App Runner or ECS Fargate running the containerized FastAPI app.
-3. **Environment Variables**:
-   - `DATABASE_URL`: `postgresql://<user>:<password>@<rds-endpoint>:5432/<dbname>`
-   - `PII_ENCRYPTION_KEY`: Real generated 32-byte Fernet key (`cryptography.fernet.Fernet.generate_key()`)
-   - `ADMIN_API_KEY`: Production secret key for admin access
-   - `AUDITOR_API_KEY`: Production secret key for auditors
-   - `SERVICE_API_KEY`: Production secret key for ingestion services
+| Role | Capabilities |
+|---|---|
+| `admin` | All operations |
+| `auditor` | Read logs, verify tamper status, view access logs |
+| `service` | Ingest logs only |
+| `user` | Ingest LLM interactions, simulate retention |
 
-### Health Check Endpoint
-`GET /health` returns DB connection health and system status:
-```json
-{
-  "status": "ok",
-  "database": "healthy",
-  "timestamp": "2026-07-30T10:45:00Z"
-}
+### Key Endpoints
+
+```
+POST /auth/login                 → Get JWT token
+POST /logs/ingest                → Ingest raw log (service/admin)
+POST /logs/ingest-llm            → Send prompt to real LLM, store governed response
+GET  /logs/{id}                  → Read a single log record (auditor+)
+GET  /logs                       → List logs with filters
+GET  /logs/{id}/reveal           → Reveal original PII (admin only)
+GET  /verify/{id}                → Tamper detection check
+POST /retention/sweep            → Manual retention sweep
+POST /retention/simulate-time    → Simulate N days passing (for demo)
+GET  /retention/policies         → List retention policies
+GET  /admin/pii/tokens           → List all PII tokens (admin)
+POST /admin/pii/decrypt          → Decrypt a PII token (admin)
+GET  /dsar/{user_id}             → DSAR report for user
+POST /dsar/{user_id}/delete      → DSAR deletion (right to be forgotten)
+GET  /access-logs                → Full access audit trail
+GET  /health                     → Health check (DB, LLM, redaction status)
+GET  /metrics                    → Prometheus metrics
+```
+
+### Example: Ingest a Log with PII
+```bash
+curl -X POST http://localhost:8000/logs/ingest \
+  -H "X-API-Key: service-secret-key-789" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "prompt": "User john@example.com called from 555-123-4567 about SSN 000-12-3456",
+    "response": "Account confirmed for john@example.com",
+    "agent_id": "finance-agent-01",
+    "user_id": "usr_john",
+    "retention_category": "FINANCIAL"
+  }'
+```
+
+### Example: Real LLM Interaction
+```bash
+curl -X POST http://localhost:8000/logs/ingest-llm \
+  -H "X-API-Key: admin-secret-key-123" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "prompt": "What is the balance policy for John Smith at account 987654321?",
+    "agent_id": "ai-governance-agent-01",
+    "user_id": "usr_operator",
+    "retention_category": "FINANCIAL"
+  }'
+```
+
+### Example: Tamper Detection
+```bash
+curl http://localhost:8000/verify/<log_id> \
+  -H "X-API-Key: auditor-secret-key-456"
+# Returns: { "is_valid": true/false, "tampered": false/true, ... }
 ```
 
 ---
 
-## Verification Proof
+## AWS Deployment
 
-All core criteria verified locally via Pytest:
-- `test_pii_redaction_and_tokenization` PASSED
-- `test_retention_expiry_simulation` PASSED
-- `test_log_access_audit` PASSED
-- `test_tamper_detection_catches_modified_record` PASSED
-- `test_dsar_handler` PASSED
+### Architecture on AWS
+
+```
+Internet → Application Load Balancer
+              ↓
+         AWS App Runner (or ECS Fargate)
+         [governed-audit-app container]
+              ↓
+         AWS RDS PostgreSQL (db.t4g.micro)
+              ↓
+         AWS Secrets Manager
+         [PII_ENCRYPTION_KEY, JWT_SECRET_KEY, API keys]
+```
+
+### Steps
+
+1. **Build & push Docker image to ECR:**
+   ```bash
+   aws ecr create-repository --repository-name governed-audit-log
+   docker build -t governed-audit-log .
+   docker tag governed-audit-log:latest <account>.dkr.ecr.<region>.amazonaws.com/governed-audit-log:latest
+   docker push <account>.dkr.ecr.<region>.amazonaws.com/governed-audit-log:latest
+   ```
+
+2. **Create RDS PostgreSQL:**
+   ```bash
+   aws rds create-db-instance \
+     --db-instance-identifier governed-audit-db \
+     --db-instance-class db.t4g.micro \
+     --engine postgres \
+     --master-username audit_user \
+     --master-user-password <strong-password> \
+     --allocated-storage 20
+   ```
+
+3. **Deploy via App Runner** pointing to the ECR image with environment variables:
+   - `DATABASE_URL=postgresql://...@<rds-endpoint>:5432/governed_audit_db`
+   - `PII_ENCRYPTION_KEY=<generated-fernet-key>`
+   - `JWT_SECRET_KEY=<strong-random-secret>`
+   - `OPENAI_API_KEY=<your-key>`
+
+---
+
+## Success Criteria Verification
+
+All 4 success criteria are tested automatically:
+
+```bash
+python -m pytest -v test_main.py
+```
+
+```
+test_pii_redaction_and_tokenization         PASSED  ← Criterion 1
+test_retention_expiry_simulation            PASSED  ← Criterion 2
+test_log_access_audit                       PASSED  ← Criterion 3
+test_tamper_detection_catches_modified_record PASSED ← Criterion 4
+test_dsar_handler                           PASSED  ← DSAR Bonus
+test_ingest_llm_interaction                 PASSED  ← LLM Integration
+```

@@ -9,151 +9,255 @@
   <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
 
-  <!-- Google Fonts: Inter & JetBrains Mono -->
+  <!-- Google Fonts: Inter, Outfit & JetBrains Mono -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-  <!-- FontAwesome Icons -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <!-- FontAwesome 6.5 Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
   
   <style>
     :root {
-      --bg-dark: #0b0f19;
-      --card-bg: rgba(18, 26, 43, 0.75);
-      --card-border: rgba(255, 255, 255, 0.08);
-      --primary: #6366f1;
-      --primary-glow: rgba(99, 102, 241, 0.35);
-      --secondary: #06b6d4;
-      --accent-green: #10b981;
-      --accent-red: #ef4444;
-      --accent-amber: #f59e0b;
-      --text-main: #f3f4f6;
-      --text-muted: #9ca3af;
+      --bg-dark: #f8fafc;
+      --bg-card: rgba(255, 255, 255, 0.85);
+      --bg-card-hover: rgba(255, 255, 255, 0.95);
+      --card-border: rgba(15, 23, 42, 0.08);
+      --card-border-glow: rgba(99, 102, 241, 0.25);
+      --primary: #4f46e5;
+      --primary-hover: #3730a3;
+      --primary-glow: rgba(99, 102, 241, 0.15);
+      --secondary: #0891b2;
+      --accent-green: #16a34a;
+      --accent-red: #dc2626;
+      --accent-amber: #d97706;
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --font-heading: 'Outfit', 'Inter', sans-serif;
+      --font-body: 'Inter', sans-serif;
       --font-mono: 'JetBrains Mono', monospace;
     }
 
-    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: var(--font-body); }
 
     body {
       background-color: var(--bg-dark);
       background-image: 
-        radial-gradient(at 10% 10%, rgba(99, 102, 241, 0.15) 0px, transparent 50%),
-        radial-gradient(at 90% 90%, rgba(6, 182, 212, 0.12) 0px, transparent 50%);
+        radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.05) 0px, transparent 40%),
+        radial-gradient(at 100% 0%, rgba(6, 182, 212, 0.04) 0px, transparent 40%),
+        radial-gradient(at 50% 100%, rgba(16, 185, 129, 0.03) 0px, transparent 50%);
       background-attachment: fixed;
       color: var(--text-main);
       min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
     }
 
     #root { display: flex; flex-direction: column; min-height: 100vh; }
 
-    /* Header & Navigation */
+    /* Header Navigation Bar */
     header {
-      background: rgba(11, 15, 25, 0.85);
-      backdrop-filter: blur(12px);
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
       border-bottom: 1px solid var(--card-border);
-      padding: 1rem 2rem;
+      padding: 0.85rem 2rem;
       position: sticky; top: 0; z-index: 100;
       display: flex; justify-content: space-between; align-items: center;
+      box-shadow: 0 4px 20px rgba(15, 23, 42, 0.04);
     }
 
-    .brand { display: flex; align-items: center; gap: 0.75rem; }
+    .brand { display: flex; align-items: center; gap: 0.85rem; }
     .brand-icon {
-      width: 40px; height: 40px;
+      width: 42px; height: 42px;
       background: linear-gradient(135deg, var(--primary), var(--secondary));
-      border-radius: 10px; display: flex; align-items: center; justify-content: center;
-      font-size: 1.2rem; color: white; box-shadow: 0 0 20px var(--primary-glow);
+      border-radius: 12px; display: flex; align-items: center; justify-content: center;
+      font-size: 1.3rem; color: white; box-shadow: 0 0 20px var(--primary-glow);
     }
     .brand-title {
-      font-size: 1.2rem; font-weight: 700;
-      background: linear-gradient(90deg, #ffffff, #94a3b8);
-      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      font-family: var(--font-heading);
+      font-size: 1.25rem;
+      font-weight: 700;
+      background: linear-gradient(90deg, #0f172a, #334155);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      letter-spacing: -0.01em;
     }
+    .brand-subtitle { font-size: 0.72rem; color: var(--text-muted); font-weight: 500; }
 
     .user-profile-badge {
       display: flex; align-items: center; gap: 0.75rem;
-      background: rgba(255, 255, 255, 0.04); border: 1px solid var(--card-border);
-      border-radius: 30px; padding: 0.35rem 1rem; font-size: 0.85rem;
+      background: rgba(15, 23, 42, 0.04); border: 1px solid var(--card-border);
+      border-radius: 30px; padding: 0.4rem 1.1rem; font-size: 0.85rem;
+    }
+    
+    .status-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background-color: var(--accent-green);
+      box-shadow: 0 0 10px var(--accent-green);
+      display: inline-block;
+      margin-right: 4px;
+      animation: pulse 2s infinite;
     }
 
-    /* Container Layout */
-    .container { max-width: 1400px; margin: 2rem auto; padding: 0 1.5rem; width: 100%; flex: 1; }
+    @keyframes pulse {
+      0% { opacity: 0.6; transform: scale(0.95); }
+      50% { opacity: 1; transform: scale(1.1); }
+      100% { opacity: 0.6; transform: scale(0.95); }
+    }
+
+    /* Container & Layout */
+    .container { max-width: 1440px; margin: 1.75rem auto; padding: 0 1.75rem; width: 100%; flex: 1; }
+
+    /* KPI Summary Cards Grid */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 1.25rem;
+      margin-bottom: 1.75rem;
+    }
+
+    .kpi-card {
+      background: var(--bg-card);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      padding: 1.25rem;
+      display: flex;
+      align-items: center;
+      gap: 1.25rem;
+      transition: all 0.3s ease;
+    }
+
+    .kpi-card:hover {
+      border-color: var(--card-border-glow);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+    }
+
+    .kpi-icon {
+      width: 52px; height: 52px;
+      border-radius: 14px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.4rem;
+    }
+    .kpi-purple { background: rgba(99, 102, 241, 0.08); color: #4f46e5; border: 1px solid rgba(99, 102, 241, 0.18); }
+    .kpi-cyan { background: rgba(6, 182, 212, 0.08); color: #0891b2; border: 1px solid rgba(6, 182, 212, 0.18); }
+    .kpi-green { background: rgba(16, 185, 129, 0.08); color: #16a34a; border: 1px solid rgba(16, 185, 129, 0.18); }
+    .kpi-amber { background: rgba(245, 158, 11, 0.08); color: #b45309; border: 1px solid rgba(245, 158, 11, 0.18); }
+
+    .kpi-value { font-family: var(--font-heading); font-size: 1.5rem; font-weight: 700; color: var(--text-main); }
+    .kpi-label { font-size: 0.8rem; color: var(--text-muted); font-weight: 500; }
 
     /* Glass Cards */
     .glass-card {
-      background: var(--card-bg); backdrop-filter: blur(16px);
-      border: 1px solid var(--card-border); border-radius: 16px;
-      padding: 1.75rem; margin-bottom: 1.5rem;
-      box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+      background: var(--bg-card);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid var(--card-border);
+      border-radius: 20px;
+      padding: 2rem;
+      margin-bottom: 1.75rem;
+      box-shadow: 0 12px 40px 0 rgba(15, 23, 42, 0.04);
     }
 
-    .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; }
-    .card-title { font-size: 1.15rem; font-weight: 600; display: flex; align-items: center; gap: 0.6rem; }
+    .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
+    .card-title { font-family: var(--font-heading); font-size: 1.25rem; font-weight: 700; display: flex; align-items: center; gap: 0.65rem; }
     .card-title i { color: var(--primary); }
 
     /* Tabs Navigation */
-    .tabs { display: flex; gap: 0.75rem; border-bottom: 1px solid var(--card-border); margin-bottom: 2rem; overflow-x: auto; }
+    .tabs { display: flex; gap: 0.75rem; border-bottom: 1px solid var(--card-border); margin-bottom: 2rem; overflow-x: auto; padding-bottom: 2px; }
     .tab-btn {
       background: transparent; border: none; color: var(--text-muted);
-      padding: 0.75rem 1.25rem; font-weight: 500; font-size: 0.95rem; cursor: pointer;
-      display: flex; align-items: center; gap: 0.5rem; border-bottom: 2px solid transparent;
-      transition: all 0.2s ease;
+      padding: 0.85rem 1.4rem; font-weight: 600; font-size: 0.95rem; cursor: pointer;
+      display: flex; align-items: center; gap: 0.6rem; border-bottom: 2px solid transparent;
+      transition: all 0.25 ease; border-radius: 10px 10px 0 0; white-space: nowrap;
     }
-    .tab-btn:hover { color: var(--text-main); }
+    .tab-btn:hover { color: var(--text-main); background: rgba(15, 23, 42, 0.02); }
     .tab-btn.active {
-      color: var(--primary); border-bottom-color: var(--primary);
-      background: rgba(99, 102, 241, 0.08); border-radius: 8px 8px 0 0;
+      color: #4f46e5; border-bottom-color: var(--primary);
+      background: rgba(99, 102, 241, 0.06);
     }
 
     /* Forms & Inputs */
     .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.25rem; margin-bottom: 1.25rem; }
-    .form-group { display: flex; flex-direction: column; gap: 0.5rem; }
-    .form-group label { font-size: 0.85rem; color: var(--text-muted); font-weight: 500; }
+    .form-group { display: flex; flex-direction: column; gap: 0.55rem; }
+    .form-group label { font-size: 0.85rem; color: var(--text-muted); font-weight: 600; }
     .form-control {
-      background: rgba(0, 0, 0, 0.3); border: 1px solid var(--card-border);
-      border-radius: 8px; padding: 0.75rem 1rem; color: var(--text-main); font-size: 0.9rem; outline: none;
+      background: rgba(255, 255, 255, 0.9); border: 1px solid var(--card-border);
+      border-radius: 10px; padding: 0.8rem 1.1rem; color: var(--text-main); font-size: 0.92rem; outline: none;
+      transition: all 0.2s ease;
     }
-    .form-control:focus { border-color: var(--primary); box-shadow: 0 0 0 2px var(--primary-glow); }
-    textarea.form-control { min-height: 100px; resize: vertical; }
+    .form-control:focus { border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-glow); }
+    textarea.form-control { min-height: 110px; resize: vertical; font-family: var(--font-mono); font-size: 0.88rem; }
 
     /* Buttons */
     .btn {
-      background: linear-gradient(135deg, var(--primary), #4f46e5);
-      color: white; border: none; border-radius: 8px; padding: 0.75rem 1.5rem;
-      font-size: 0.9rem; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 0.5rem;
-      transition: all 0.2s ease; box-shadow: 0 4px 14px 0 var(--primary-glow);
+      background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+      color: white; border: none; border-radius: 10px; padding: 0.8rem 1.6rem;
+      font-size: 0.92rem; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 0.6rem;
+      transition: all 0.2s ease; box-shadow: 0 4px 16px 0 var(--primary-glow);
     }
-    .btn:hover { opacity: 0.92; transform: translateY(-1px); }
-    .btn-secondary { background: rgba(255, 255, 255, 0.08); color: var(--text-main); box-shadow: none; border: 1px solid var(--card-border); }
-    .btn-secondary:hover { background: rgba(255, 255, 255, 0.15); }
-    .btn-success { background: linear-gradient(135deg, #10b981, #059669); box-shadow: 0 4px 14px 0 rgba(16, 185, 129, 0.35); }
-    .btn-danger { background: linear-gradient(135deg, #dc2626, #b91c1c); box-shadow: 0 4px 14px 0 rgba(220, 38, 38, 0.35); }
+    .btn:hover { opacity: 0.95; transform: translateY(-1px); box-shadow: 0 6px 20px 0 var(--primary-glow); }
+    .btn:active { transform: translateY(0); }
+    .btn-secondary { background: rgba(15, 23, 42, 0.04); color: var(--text-main); box-shadow: none; border: 1px solid var(--card-border); }
+    .btn-secondary:hover { background: rgba(15, 23, 42, 0.08); border-color: rgba(15, 23, 42, 0.12); }
+    .btn-success { background: linear-gradient(135deg, #10b981, #059669); box-shadow: 0 4px 16px 0 rgba(16, 185, 129, 0.35); }
+    .btn-danger { background: linear-gradient(135deg, #ef4444, #dc2626); box-shadow: 0 4px 16px 0 rgba(239, 68, 68, 0.35); }
+
+    .sample-pill {
+      background: rgba(99, 102, 241, 0.06); border: 1px solid rgba(99, 102, 241, 0.2); color: #4f46e5;
+      padding: 0.3rem 0.75rem; border-radius: 20px; font-size: 0.78rem; font-weight: 500; cursor: pointer;
+      display: inline-flex; align-items: center; gap: 0.4rem; transition: all 0.2s ease;
+    }
+    .sample-pill:hover { background: rgba(99, 102, 241, 0.15); color: #3730a3; }
 
     /* Output Console */
     .output-box {
-      background: #070a12; border: 1px solid var(--card-border); border-radius: 10px;
-      padding: 1.25rem; font-family: var(--font-mono); font-size: 0.85rem; color: #38bdf8;
-      overflow-x: auto; white-space: pre-wrap; word-break: break-all; margin-top: 1rem;
+      background: #f1f5f9; border: 1px solid var(--card-border); border-radius: 12px;
+      padding: 1.4rem; font-family: var(--font-mono); font-size: 0.85rem; color: #0284c7;
+      overflow-x: auto; white-space: pre-wrap; word-break: break-all; margin-top: 1.25rem;
+      box-shadow: inset 0 2px 8px rgba(15, 23, 42, 0.03);
+      position: relative;
     }
 
     /* Tables */
-    .data-table-container { overflow-x: auto; }
+    .data-table-container { overflow-x: auto; border-radius: 12px; border: 1px solid var(--card-border); }
     .data-table { width: 100%; border-collapse: collapse; font-size: 0.88rem; text-align: left; }
-    .data-table th { background: rgba(255, 255, 255, 0.03); color: var(--text-muted); padding: 0.85rem 1rem; font-weight: 600; border-bottom: 1px solid var(--card-border); }
-    .data-table td { padding: 1rem; border-bottom: 1px solid rgba(255, 255, 255, 0.04); color: var(--text-main); }
-    .data-table tr:hover { background: rgba(255, 255, 255, 0.02); }
+    .data-table th { background: rgba(15, 23, 42, 0.02); color: var(--text-muted); padding: 0.95rem 1.1rem; font-weight: 600; border-bottom: 1px solid var(--card-border); }
+    .data-table td { padding: 1.05rem 1.1rem; border-bottom: 1px solid rgba(15, 23, 42, 0.04); color: var(--text-main); }
+    .data-table tr:hover { background: rgba(15, 23, 42, 0.015); }
 
     /* Badges */
-    .tag { display: inline-block; padding: 0.25rem 0.65rem; border-radius: 6px; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em; }
-    .tag-admin { background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.4); }
-    .tag-user { background: rgba(99, 102, 241, 0.15); color: #818cf8; border: 1px solid rgba(99, 102, 241, 0.3); }
-    .tag-approved { background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); }
-    .tag-pending { background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); }
+    .tag { display: inline-block; padding: 0.25rem 0.65rem; border-radius: 6px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; }
+    .tag-admin { background: rgba(239, 68, 68, 0.1); color: #dc2626; border: 1px solid rgba(239, 68, 68, 0.2); }
+    .tag-user { background: rgba(99, 102, 241, 0.08); color: #4f46e5; border: 1px solid rgba(99, 102, 241, 0.18); }
+    .tag-approved { background: rgba(16, 185, 129, 0.08); color: #16a34a; border: 1px solid rgba(16, 185, 129, 0.18); }
+    .tag-pending { background: rgba(245, 158, 11, 0.08); color: #b45309; border: 1px solid rgba(245, 158, 11, 0.18); }
 
     /* Alert Banners */
     .alert-banner {
-      background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.3); color: #fbbf24;
-      padding: 1rem 1.25rem; border-radius: 12px; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.75rem;
+      background: rgba(245, 158, 11, 0.06); border: 1px solid rgba(245, 158, 11, 0.25); color: #b45309;
+      padding: 1rem 1.25rem; border-radius: 14px; margin-bottom: 1.75rem; display: flex; align-items: center; gap: 0.85rem;
     }
+
+    /* Toast Notification */
+    .toast {
+      position: fixed; bottom: 2rem; right: 2rem; z-index: 1000;
+      padding: 1rem 1.5rem; border-radius: 14px; display: flex; align-items: center; gap: 0.75rem;
+      font-weight: 600; font-size: 0.9rem; box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+      animation: slideUp 0.3s ease;
+    }
+    .toast-success { background: #d1fae5; color: #065f46; border: 1px solid #10b981; }
+    .toast-error { background: #fee2e2; color: #991b1b; border: 1px solid #ef4444; }
+
+    @keyframes slideUp {
+      from { transform: translateY(20px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+
   </style>
 
   <script>
@@ -173,7 +277,7 @@
   <div id="globalErrorDisplay" style="display: none; background: #dc2626; color: white; padding: 1rem; text-align: center; font-weight: 600; z-index: 9999;"></div>
   <div id="root"></div>
 
-  <!-- Standard Pure JavaScript React Component Script (Zero Linter Syntax Errors) -->
+  <!-- Standard Pure JavaScript React 18 Component Script -->
   <script>
     const { useState, useEffect, createElement: h } = React;
 
@@ -189,7 +293,6 @@
         } catch(e) { return 'ingestTab'; }
       });
       const [authMode, setAuthMode] = useState('login');
-
       const [authForm, setAuthForm] = useState({ username: '', email: '', password: '', role: 'user' });
       const [authMsg, setAuthMsg] = useState(null);
 
@@ -207,8 +310,23 @@
       const [accessLogs, setAccessLogs] = useState([]);
       const [dsarUserId, setDsarUserId] = useState('usr_alice_99');
       const [dsarOutput, setDsarOutput] = useState(null);
+      const [toast, setToast] = useState(null);
+      
+      const [timeTravelDays, setTimeTravelDays] = useState(90);
+      const [simResult, setSimResult] = useState(null);
+      const [piiTokens, setPiiTokens] = useState([]);
+      const [decryptResult, setDecryptResult] = useState(null);
+      const [ingestMode, setIngestMode] = useState('manual');
+      const [policiesList, setPoliciesList] = useState([]);
+      const [newPolicyForm, setNewPolicyForm] = useState({ category: '', retentionDays: 30 });
+
+      const showToast = function(message, type) {
+        setToast({ message: message, type: type || 'success' });
+        setTimeout(function() { setToast(null); }, 4000);
+      };
 
       useEffect(function() {
+        fetchPoliciesList();
         if (currentUser && currentUser.role === 'admin') {
           fetchUsersList();
         }
@@ -216,7 +334,7 @@
 
       const handleAuthSubmit = async function(e) {
         e.preventDefault();
-        setAuthMsg({ type: 'info', text: 'Authenticating...' });
+        setAuthMsg({ type: 'info', text: 'Authenticating with security vault...' });
 
         const endpoint = authMode === 'login' ? '/auth/login' : '/auth/register';
         try {
@@ -234,10 +352,11 @@
               setToken(data.access_token);
               localStorage.setItem('governed_user', JSON.stringify(userObj));
               localStorage.setItem('governed_token', data.access_token);
-              setAuthMsg({ type: 'success', text: 'Welcome back, ' + data.username + '!' });
+              showToast('Welcome back, ' + data.username + '!', 'success');
               setActiveTab(data.role === 'admin' ? 'usersTab' : 'ingestTab');
             } else {
               setAuthMsg({ type: 'success', text: data.message });
+              showToast(data.message, 'success');
               setAuthMode('login');
             }
           } else {
@@ -254,6 +373,7 @@
         localStorage.removeItem('governed_user');
         localStorage.removeItem('governed_token');
         setActiveTab('ingestTab');
+        showToast('Signed out successfully', 'success');
       };
 
       const getHeaders = function() {
@@ -281,9 +401,81 @@
           });
           const data = await res.json();
           if (res.ok) {
+            showToast('User ability status updated successfully!', 'success');
             fetchUsersList();
-          } else { alert('Verification failed: ' + data.detail); }
-        } catch (err) { alert('Error: ' + err.message); }
+          } else { showToast('Verification failed: ' + data.detail, 'error'); }
+        } catch (err) { showToast('Error: ' + err.message, 'error'); }
+      };
+
+      const fetchPoliciesList = async function() {
+        try {
+          const res = await fetch('/retention/policies', { headers: getHeaders() });
+          const data = await res.json();
+          if (res.ok && Array.isArray(data)) setPoliciesList(data);
+        } catch (err) { console.error('Error fetching policies:', err); }
+      };
+
+      const handleUpsertPolicy = async function(e) {
+        if (e) e.preventDefault();
+        try {
+          const res = await fetch('/retention/policies', {
+            method: 'POST',
+            headers: getHeaders(),
+            body: JSON.stringify({
+              category: newPolicyForm.category,
+              retention_days: parseInt(newPolicyForm.retentionDays)
+            })
+          });
+          const data = await res.json();
+          if (res.ok) {
+            showToast('Retention policy ' + data.category + ' upserted successfully!', 'success');
+            setNewPolicyForm({ category: '', retentionDays: 30 });
+            fetchPoliciesList();
+          } else { showToast('Failed to save policy: ' + (data.detail || JSON.stringify(data)), 'error'); }
+        } catch (err) { showToast('Error: ' + err.message, 'error'); }
+      };
+
+      const handleDeletePolicy = async function(category) {
+        try {
+          const res = await fetch('/retention/policies/' + category, {
+            method: 'DELETE',
+            headers: getHeaders()
+          });
+          const data = await res.json();
+          if (res.ok) {
+            showToast('Retention policy ' + category + ' deleted.', 'success');
+            fetchPoliciesList();
+          } else { showToast('Failed to delete policy: ' + (data.detail || JSON.stringify(data)), 'error'); }
+        } catch (err) { showToast('Error: ' + err.message, 'error'); }
+      };
+
+      const loadPresetSample = function(type) {
+        if (type === 'financial') {
+          setIngestForm({
+            prompt: 'User email alice@example.com requested wire transfer for SSN 000-12-3456.',
+            response: 'Processed wire transfer for account alice@example.com successfully.',
+            agentId: 'finance-agent-01',
+            userId: 'usr_alice_99',
+            retentionCategory: 'FINANCIAL'
+          });
+        } else if (type === 'healthcare') {
+          setIngestForm({
+            prompt: 'Patient Dr. Bob (bob.smith@clinic.org) requesting medical records for Phone +1-555-019-2831.',
+            response: 'Retrieved HIPAA encrypted lab test reports for bob.smith@clinic.org.',
+            agentId: 'health-agent-04',
+            userId: 'usr_bob_42',
+            retentionCategory: 'HEALTHCARE'
+          });
+        } else {
+          setIngestForm({
+            prompt: 'HR employee charlie@corp.com updated salary details for SSN 999-88-7766.',
+            response: 'Updated payroll ledger record for charlie@corp.com.',
+            agentId: 'hr-agent-02',
+            userId: 'usr_charlie_11',
+            retentionCategory: 'GENERAL'
+          });
+        }
+        showToast('Sample prompt loaded into form', 'success');
       };
 
       const handleIngest = async function(e) {
@@ -304,19 +496,21 @@
           const data = await res.json();
           if (res.ok) {
             setVerifyLogId(data.id);
-            setIngestOutput('✅ Log Ingested Successfully!\n\nLog ID: ' + data.id + '\nRedacted Prompt: ' + data.prompt_redacted + '\nRedacted Response: ' + data.response_redacted + '\nRetention Expiry: ' + data.retention_expires_at + ' (' + data.retention_category + ')\nCanonical Hash: ' + data.record_hash);
+            setIngestOutput('✅ LOG INGESTED & PII REDACTED SUCCESSFULLY!\n\n🔑 Record ID: ' + data.id + '\n🛡️ Redacted Prompt: ' + data.prompt_redacted + '\n🔒 Redacted Response: ' + data.response_redacted + '\n⏳ Retention Expiry: ' + data.retention_expires_at + ' (' + data.retention_category + ')\n🔏 Canonical SHA-256 Hash: ' + data.record_hash);
+            showToast('Audit log ingested & PII tokenized!', 'success');
           } else { setIngestOutput('❌ Error (' + res.status + '): ' + JSON.stringify(data, null, 2)); }
         } catch (err) { setIngestOutput('❌ Error: ' + err.message); }
       };
 
       const handleVerifyTamper = async function() {
-        if (!verifyLogId) return alert('Please enter a Log ID');
+        if (!verifyLogId) return showToast('Please enter a valid Audit Log ID', 'error');
         setTamperOutput('Verifying SHA-256 canonical hash integrity...');
         try {
           const res = await fetch('/verify/' + verifyLogId, { headers: getHeaders() });
           const data = await res.json();
           if (res.ok) {
-            setTamperOutput('🔍 Tamper Status: ' + (data.is_valid ? 'VALID ✅ (Untampered)' : 'TAMPERED ❌ (Hash Mismatch)') + '\n\nLog ID: ' + data.log_id + '\nStored Hash: ' + data.stored_hash + '\nComputed Hash: ' + data.computed_hash);
+            setTamperOutput('🔍 HASH INTEGRITY VERIFICATION RESULT:\n\nStatus: ' + (data.is_valid ? 'VALID ✅ (Untampered)' : 'TAMPERED ❌ (Hash Mismatch)') + '\nLog ID: ' + data.log_id + '\nStored SHA-256:  ' + data.stored_hash + '\nComputed SHA-256: ' + data.computed_hash);
+            showToast(data.is_valid ? 'Hash Verified: Untampered ✅' : 'Hash Mismatch Detected! ❌', data.is_valid ? 'success' : 'error');
           } else { setTamperOutput('❌ Error: ' + JSON.stringify(data)); }
         } catch (err) { setTamperOutput('❌ Error: ' + err.message); }
       };
@@ -325,131 +519,225 @@
         try {
           const res = await fetch('/access-logs', { headers: getHeaders() });
           const data = await res.json();
-          if (res.ok && Array.isArray(data)) setAccessLogs(data);
-        } catch (err) { alert('Error loading access logs: ' + err.message); }
+          if (res.ok && Array.isArray(data)) {
+            setAccessLogs(data);
+            showToast('Access logs updated', 'success');
+          }
+        } catch (err) { showToast('Error loading access logs: ' + err.message, 'error'); }
       };
 
       const handleDSAR = async function(action) {
-        setDsarOutput('Processing DSAR query...');
+        setDsarOutput('Processing DSAR operation...');
         const endpoint = action === 'delete' ? '/dsar/' + dsarUserId + '/delete' : '/dsar/' + dsarUserId;
         const method = action === 'delete' ? 'POST' : 'GET';
         try {
           const res = await fetch(endpoint, { method: method, headers: getHeaders() });
           const data = await res.json();
-          setDsarOutput('📄 DSAR Result:\n' + JSON.stringify(data, null, 2));
+          setDsarOutput('📄 DSAR SUBJECT AUDIT REPORT:\n' + JSON.stringify(data, null, 2));
+          showToast(action === 'delete' ? 'DSAR Right-to-Be-Forgotten Deletion Executed!' : 'DSAR Report Generated', 'success');
         } catch (err) { setDsarOutput('❌ Error: ' + err.message); }
       };
 
-      // Unauthenticated Render
+      const handleTimeTravel = async function(days) {
+        setSimResult('Simulating retention sweep ' + days + ' days into the future...');
+        try {
+          const res = await fetch('/retention/simulate-time', {
+            method: 'POST',
+            headers: getHeaders(),
+            body: JSON.stringify({ days_forward: days })
+          });
+          const data = await res.json();
+          if (res.ok) {
+            setSimResult('⏳ RETENTION SWEEP SIMULATION RESULTS:\n\nTarget Future Date: ' + data.simulated_future_time + '\nDays Forward:       ' + data.days_forward + ' days\nRecords Expired & Swept: ' + data.records_swept);
+            showToast('Time travel sweep completed! Swept ' + data.records_swept + ' records.', 'success');
+          } else { setSimResult('❌ Error: ' + JSON.stringify(data)); }
+        } catch (err) { setSimResult('❌ Error: ' + err.message); }
+      };
+
+      const fetchPiiTokens = async function() {
+        try {
+          const res = await fetch('/admin/pii/tokens', { headers: getHeaders() });
+          const data = await res.json();
+          if (res.ok && Array.isArray(data)) {
+            setPiiTokens(data);
+            showToast('PII token vault updated', 'success');
+          }
+        } catch (err) { showToast('Error fetching PII tokens: ' + err.message, 'error'); }
+      };
+
+      const handleDecryptToken = async function(tokenStr) {
+        try {
+          const res = await fetch('/admin/pii/decrypt', {
+            method: 'POST',
+            headers: getHeaders(),
+            body: JSON.stringify({ token: tokenStr })
+          });
+          const data = await res.json();
+          if (res.ok) {
+            setDecryptResult('🔓 DECRYPTION RESULT (AUDIT LOGGED):\n\nToken: ' + data.token + '\nType:  ' + data.entity_type + '\nUser:  ' + data.user_id + '\nDecrypted PII Value: ' + data.decrypted_value);
+            showToast('Decrypted PII Token ' + tokenStr + ' (Access Logged)', 'success');
+          } else { setDecryptResult('❌ Error: ' + JSON.stringify(data)); }
+        } catch (err) { showToast('Error decrypting token: ' + err.message, 'error'); }
+      };
+
+      // Toast Component
+      const renderToast = function() {
+        if (!toast) return null;
+        return h('div', { className: 'toast ' + (toast.type === 'error' ? 'toast-error' : 'toast-success') },
+          h('i', { className: toast.type === 'error' ? 'fa-solid fa-circle-exclamation' : 'fa-solid fa-circle-check' }),
+          h('span', null, toast.message)
+        );
+      };
+
+      // Unauthenticated Render (Login & Registration Portal)
       if (!currentUser) {
         return h('div', null,
+          renderToast(),
           h('header', null,
             h('div', { className: 'brand' },
               h('div', { className: 'brand-icon' }, h('i', { className: 'fa-solid fa-shield-halved' })),
-              h('div', { className: 'brand-title' }, 'Governed Audit Log (React Portal)')
+              h('div', null,
+                h('div', { className: 'brand-title' }, 'Governed Audit Log'),
+                h('div', { className: 'brand-subtitle' }, 'Enterprise AI Data Governance & Redaction Portal')
+              )
+            ),
+            h('div', { style: { fontSize: '0.85rem', color: 'var(--text-muted)' } },
+              h('span', { className: 'status-dot' }), 'System Operational'
             )
           ),
-          h('div', { className: 'container', style: { maxWidth: '480px', marginTop: '4rem' } },
+          h('div', { className: 'container', style: { maxWidth: '460px', marginTop: '3.5rem' } },
             h('div', { className: 'glass-card' },
-              h('div', { style: { display: 'flex', gap: '1rem', marginBottom: '1.5rem', borderBottom: '1px solid var(--card-border)' } },
+              h('div', { style: { display: 'flex', gap: '0.75rem', marginBottom: '1.75rem', borderBottom: '1px solid var(--card-border)', paddingBottom: '0.5rem' } },
                 h('button', { className: 'tab-btn ' + (authMode === 'login' ? 'active' : ''), onClick: function() { setAuthMode('login'); }, style: { flex: 1, justifyContent: 'center' } }, 'Sign In'),
                 h('button', { className: 'tab-btn ' + (authMode === 'register' ? 'active' : ''), onClick: function() { setAuthMode('register'); }, style: { flex: 1, justifyContent: 'center' } }, 'Register Account')
               ),
-              authMsg ? h('div', { style: { padding: '0.75rem', borderRadius: '8px', marginBottom: '1rem', fontSize: '0.85rem', background: authMsg.type === 'error' ? 'rgba(239,68,68,0.2)' : 'rgba(16,185,129,0.2)', color: authMsg.type === 'error' ? '#f87171' : '#34d399' } }, authMsg.text) : null,
+              authMsg ? h('div', { style: { padding: '0.85rem', borderRadius: '10px', marginBottom: '1.25rem', fontSize: '0.85rem', background: authMsg.type === 'error' ? 'rgba(239,68,68,0.1)' : 'rgba(16,185,129,0.1)', color: authMsg.type === 'error' ? '#dc2626' : '#16a34a', border: '1px solid ' + (authMsg.type === 'error' ? 'rgba(239,68,68,0.2)' : 'rgba(16,185,129,0.2)') } }, authMsg.text) : null,
               h('form', { onSubmit: handleAuthSubmit },
-                h('div', { className: 'form-group', style: { marginBottom: '1rem' } },
+                h('div', { className: 'form-group', style: { marginBottom: '1.1rem' } },
                   h('label', null, 'Username'),
-                  h('input', { type: 'text', className: 'form-control', value: authForm.username, onChange: function(e) { setAuthForm(Object.assign({}, authForm, { username: e.target.value })); }, placeholder: 'admin or john_doe', required: true })
+                  h('input', { type: 'text', className: 'form-control', value: authForm.username, onChange: function(e) { setAuthForm(Object.assign({}, authForm, { username: e.target.value })); }, placeholder: 'admin or user', required: true })
                 ),
-                authMode === 'register' ? h('div', { className: 'form-group', style: { marginBottom: '1rem' } },
+                authMode === 'register' ? h('div', { className: 'form-group', style: { marginBottom: '1.1rem' } },
                   h('label', null, 'Email Address'),
                   h('input', { type: 'email', className: 'form-control', value: authForm.email, onChange: function(e) { setAuthForm(Object.assign({}, authForm, { email: e.target.value })); }, placeholder: 'user@example.com', required: true })
                 ) : null,
-                h('div', { className: 'form-group', style: { marginBottom: '1rem' } },
+                h('div', { className: 'form-group', style: { marginBottom: '1.1rem' } },
                   h('label', null, 'Password'),
                   h('input', { type: 'password', className: 'form-control', value: authForm.password, onChange: function(e) { setAuthForm(Object.assign({}, authForm, { password: e.target.value })); }, placeholder: '••••••••', required: true })
                 ),
-                authMode === 'register' ? h('div', { className: 'form-group', style: { marginBottom: '1.25rem' } },
+                authMode === 'register' ? h('div', { className: 'form-group', style: { marginBottom: '1.5rem' } },
                   h('label', null, 'Requested Role'),
                   h('select', { className: 'form-control', value: authForm.role, onChange: function(e) { setAuthForm(Object.assign({}, authForm, { role: e.target.value })); } },
-                    h('option', { value: 'user' }, 'Regular User (Requires Admin Verification)'),
-                    h('option', { value: 'admin' }, 'Admin (Full Control)')
+                    h('option', { value: 'user' }, 'Regular User (Requires Admin Approval)'),
+                    h('option', { value: 'admin' }, 'Admin (Full Governance Access)')
                   )
                 ) : null,
-                h('button', { type: 'submit', className: 'btn', style: { width: '100%', justifyContent: 'center' } },
+                h('button', { type: 'submit', className: 'btn', style: { width: '100%', justifyContent: 'center', padding: '0.9rem' } },
                   h('i', { className: authMode === 'login' ? 'fa-solid fa-right-to-bracket' : 'fa-solid fa-user-plus' }),
-                  authMode === 'login' ? ' Sign In to Portal' : ' Create Account'
+                  authMode === 'login' ? ' Sign In to Portal' : ' Register New Account'
                 )
-              ),
-              h('div', { style: { marginTop: '1.25rem', fontSize: '0.8rem', color: 'var(--text-muted)', textAlign: 'center' } },
-                'Demo Admin Login: ', h('strong', null, 'admin'), ' / ', h('strong', null, 'admin123')
               )
             )
           )
         );
       }
 
-      // Logged In Main Portal Render
+      // Logged In Portal Dashboard Render
       const role = currentUser ? currentUser.role : 'user';
       const isApproved = currentUser ? currentUser.is_approved : false;
       const username = currentUser ? currentUser.username : 'User';
 
       return h('div', null,
+        renderToast(),
         h('header', null,
           h('div', { className: 'brand' },
             h('div', { className: 'brand-icon' }, h('i', { className: 'fa-solid fa-shield-halved' })),
             h('div', null,
               h('div', { className: 'brand-title' }, 'Governed Audit Log'),
-              h('div', { style: { fontSize: '0.75rem', color: 'var(--text-muted)' } }, 'Enterprise React Governance Portal')
+              h('div', { className: 'brand-subtitle' }, 'Enterprise AI Data Governance Portal')
             )
           ),
           h('div', { style: { display: 'flex', alignItems: 'center', gap: '1rem' } },
             h('div', { className: 'user-profile-badge' },
+              h('span', { className: 'status-dot' }),
               h('i', { className: 'fa-solid fa-circle-user', style: { color: 'var(--primary)' } }),
               h('span', null, h('strong', null, username)),
               h('span', { className: 'tag ' + (role === 'admin' ? 'tag-admin' : 'tag-user') }, role),
-              h('span', { className: 'tag ' + (isApproved ? 'tag-approved' : 'tag-pending') }, isApproved ? 'Ability Approved' : 'Ability Pending')
+              h('span', { className: 'tag ' + (isApproved ? 'tag-approved' : 'tag-pending') }, isApproved ? 'APPROVED' : 'PENDING')
             ),
-            h('button', { className: 'btn btn-secondary', onClick: handleLogout, style: { padding: '0.4rem 0.8rem', fontSize: '0.8rem' } },
+            h('button', { className: 'btn btn-secondary', onClick: handleLogout, style: { padding: '0.5rem 1rem', fontSize: '0.85rem' } },
               h('i', { className: 'fa-solid fa-arrow-right-from-bracket' }), ' Sign Out'
             )
           )
         ),
 
         h('div', { className: 'container' },
+          // Top KPI Metrics Row
+          h('div', { className: 'kpi-grid' },
+            h('div', { className: 'kpi-card' },
+              h('div', { className: 'kpi-icon kpi-purple' }, h('i', { className: 'fa-solid fa-file-shield' })),
+              h('div', null,
+                h('div', { className: 'kpi-value' }, 'Active'),
+                h('div', { className: 'kpi-label' }, 'Audit Log Engine')
+              )
+            ),
+            h('div', { className: 'kpi-card' },
+              h('div', { className: 'kpi-icon kpi-cyan' }, h('i', { className: 'fa-solid fa-lock' })),
+              h('div', null,
+                h('div', { className: 'kpi-value' }, 'AES-256'),
+                h('div', { className: 'kpi-label' }, 'PII Token Encryption')
+              )
+            ),
+            h('div', { className: 'kpi-card' },
+              h('div', { className: 'kpi-icon kpi-green' }, h('i', { className: 'fa-solid fa-fingerprint' })),
+              h('div', null,
+                h('div', { className: 'kpi-value' }, '100%'),
+                h('div', { className: 'kpi-label' }, 'SHA-256 Tamper Proof')
+              )
+            ),
+            h('div', { className: 'kpi-card' },
+              h('div', { className: 'kpi-icon kpi-amber' }, h('i', { className: 'fa-solid fa-user-shield' })),
+              h('div', null,
+                h('div', { className: 'kpi-value' }, role.toUpperCase()),
+                h('div', { className: 'kpi-label' }, isApproved ? 'Abilities Verified' : 'Approval Pending')
+              )
+            )
+          ),
+
           !isApproved ? h('div', { className: 'alert-banner' },
-            h('i', { className: 'fa-solid fa-triangle-exclamation', style: { fontSize: '1.2rem' } }),
+            h('i', { className: 'fa-solid fa-triangle-exclamation', style: { fontSize: '1.4rem' } }),
             h('div', null,
               h('strong', null, 'User Ability Status: Pending Admin Verification'),
-              h('div', { style: { fontSize: '0.85rem' } }, 'An administrator must inspect and approve your user abilities before advanced governance controls are unlocked.')
+              h('div', { style: { fontSize: '0.85rem' } }, 'An administrator must approve your user abilities before advanced governance controls are unlocked.')
             )
           ) : null,
 
+          // Navigation Tabs
           h('div', { className: 'tabs' },
             role === 'admin' ? h('button', { className: 'tab-btn ' + (activeTab === 'usersTab' ? 'active' : ''), onClick: function() { setActiveTab('usersTab'); } },
               h('i', { className: 'fa-solid fa-users-gear' }), ' Admin User Verification'
             ) : null,
             h('button', { className: 'tab-btn ' + (activeTab === 'ingestTab' ? 'active' : ''), onClick: function() { setActiveTab('ingestTab'); } },
-              h('i', { className: 'fa-solid fa-file-shield' }), ' Log Ingestion & Redaction'
+              h('i', { className: 'fa-solid fa-wand-magic-sparkles' }), ' Log Ingestion & Redaction'
             ),
             h('button', { className: 'tab-btn ' + (activeTab === 'tamperTab' ? 'active' : ''), onClick: function() { setActiveTab('tamperTab'); } },
-              h('i', { className: 'fa-solid fa-fingerprint' }), ' Tamper Verification'
+              h('i', { className: 'fa-solid fa-shield-cat' }), ' SHA-256 Tamper Verification'
             ),
             role === 'admin' ? h('button', { className: 'tab-btn ' + (activeTab === 'auditTab' ? 'active' : ''), onClick: function() { setActiveTab('auditTab'); fetchAccessLogs(); } },
-              h('i', { className: 'fa-solid fa-list-check' }), ' Log Access Audit'
+              h('i', { className: 'fa-solid fa-eye' }), ' Log Access Audit Ledger'
             ) : null,
             h('button', { className: 'tab-btn ' + (activeTab === 'dsarTab' ? 'active' : ''), onClick: function() { setActiveTab('dsarTab'); } },
-              h('i', { className: 'fa-solid fa-user-shield' }), ' DSAR Portal'
+              h('i', { className: 'fa-solid fa-id-card' }), ' DSAR Subject Portal'
             )
           ),
 
-          // TAB 1: User Verification
+          // TAB 1: User Verification (Admin)
           (activeTab === 'usersTab' && role === 'admin') ? h('div', { className: 'glass-card' },
             h('div', { className: 'card-header' },
-              h('div', { className: 'card-title' }, h('i', { className: 'fa-solid fa-user-check' }), ' Admin User Verification & Ability Management'),
+              h('div', { className: 'card-title' }, h('i', { className: 'fa-solid fa-users-gear' }), ' Admin User Verification & Ability Management'),
               h('button', { className: 'btn btn-secondary', onClick: fetchUsersList }, h('i', { className: 'fa-solid fa-rotate' }), ' Refresh User List')
             ),
-            h('p', { style: { color: 'var(--text-muted)', fontSize: '0.9rem', marginBottom: '1.25rem' } }, 'Inspect registered users, verify user abilities, and approve/revoke system privileges.'),
+            h('p', { style: { color: 'var(--text-muted)', fontSize: '0.9rem', marginBottom: '1.25rem' } }, 'Inspect registered users, verify user abilities, and approve or revoke system privileges.'),
             h('div', { className: 'data-table-container' },
               h('table', { className: 'data-table' },
                 h('thead', null,
@@ -473,7 +761,7 @@
                       h('td', null,
                         h('button', {
                           className: 'btn ' + (u.is_approved ? 'btn-danger' : 'btn-success'),
-                          style: { padding: '0.35rem 0.75rem', fontSize: '0.8rem' },
+                          style: { padding: '0.4rem 0.85rem', fontSize: '0.82rem' },
                           onClick: function() { toggleUserVerification(u.id, u.is_approved); }
                         },
                           h('i', { className: u.is_approved ? 'fa-solid fa-user-xmark' : 'fa-solid fa-user-check' }),
@@ -487,10 +775,88 @@
             )
           ) : null,
 
-          // TAB 2: Log Ingestion
+          // TAB 1 (Extended): Retention Policy Management (Admin only)
+          (activeTab === 'usersTab' && role === 'admin') ? h('div', { className: 'glass-card', style: { marginTop: '2rem' } },
+            h('div', { className: 'card-header' },
+              h('div', { className: 'card-title' }, h('i', { className: 'fa-solid fa-clock-rotate-left' }), ' Regulatory Retention Policy Management'),
+              h('button', { className: 'btn btn-secondary', onClick: fetchPoliciesList }, h('i', { className: 'fa-solid fa-rotate' }), ' Refresh Policies')
+            ),
+            h('p', { style: { color: 'var(--text-muted)', fontSize: '0.9rem', marginBottom: '1.25rem' } }, 'Define and enforce data retention rules by adding custom regulatory categories or editing retention windows.'),
+            
+            // Add/Update Policy Form
+            h('form', { onSubmit: handleUpsertPolicy, style: { display: 'flex', gap: '1rem', alignItems: 'flex-end', marginBottom: '1.75rem', flexWrap: 'wrap' } },
+              h('div', { className: 'form-group', style: { flex: 1, minWidth: '180px' } },
+                h('label', null, 'Category Name (e.g. LEGAL)'),
+                h('input', {
+                  type: 'text',
+                  className: 'form-control',
+                  value: newPolicyForm.category,
+                  onChange: function(e) { setNewPolicyForm(Object.assign({}, newPolicyForm, { category: e.target.value })); },
+                  placeholder: 'e.g. MARKETING',
+                  required: true
+                })
+              ),
+              h('div', { className: 'form-group', style: { flex: 1, minWidth: '120px' } },
+                h('label', null, 'Retention Duration (Days)'),
+                h('input', {
+                  type: 'number',
+                  className: 'form-control',
+                  value: newPolicyForm.retentionDays,
+                  onChange: function(e) { setNewPolicyForm(Object.assign({}, newPolicyForm, { retentionDays: e.target.value })); },
+                  min: 1,
+                  max: 3650,
+                  required: true
+                })
+              ),
+              h('button', { type: 'submit', className: 'btn', style: { height: '42px', padding: '0 1.5rem' } },
+                h('i', { className: 'fa-solid fa-floppy-disk' }), ' Save Policy'
+              )
+            ),
+
+            // Retention Policies Table
+            h('div', { className: 'data-table-container' },
+              h('table', { className: 'data-table' },
+                h('thead', null,
+                  h('tr', null,
+                    h('th', null, 'Category'),
+                    h('th', null, 'Retention Period (Days)'),
+                    h('th', null, 'Classification Type'),
+                    h('th', null, 'Actions')
+                  )
+                ),
+                h('tbody', null,
+                  policiesList.map(function(p) {
+                    return h('tr', { key: p.category },
+                      h('td', null, h('strong', null, p.category)),
+                      h('td', null, p.retention_days + ' days'),
+                      h('td', null, h('span', { className: 'tag ' + (p.is_core ? 'tag-user' : 'tag-admin') }, p.is_core ? 'System Core' : 'Custom Category')),
+                      h('td', null,
+                        p.is_core ? h('span', { style: { fontSize: '0.8rem', color: 'var(--text-muted)' } }, 'Protected') :
+                        h('button', {
+                          className: 'btn btn-danger',
+                          style: { padding: '0.4rem 0.85rem', fontSize: '0.82rem' },
+                          onClick: function() { handleDeletePolicy(p.category); }
+                        },
+                          h('i', { className: 'fa-solid fa-trash-can' }), ' Delete'
+                        )
+                      )
+                    );
+                  })
+                )
+              )
+            )
+          ) : null,
+
+          // TAB 2: Log Ingestion & Redaction
           (activeTab === 'ingestTab') ? h('div', { className: 'glass-card' },
             h('div', { className: 'card-header' },
-              h('div', { className: 'card-title' }, h('i', { className: 'fa-solid fa-wand-magic-sparkles' }), ' Raw Log Ingestion & PII Redaction')
+              h('div', { className: 'card-title' }, h('i', { className: 'fa-solid fa-wand-magic-sparkles' }), ' Raw Log Ingestion & PII Redaction Engine'),
+              h('div', { style: { display: 'flex', gap: '0.5rem', alignItems: 'center' } },
+                h('span', { style: { fontSize: '0.8rem', color: 'var(--text-muted)', marginRight: '0.4rem' } }, 'Quick Samples:'),
+                h('button', { className: 'sample-pill', onClick: function() { loadPresetSample('financial'); } }, h('i', { className: 'fa-solid fa-coins' }), ' Financial'),
+                h('button', { className: 'sample-pill', onClick: function() { loadPresetSample('healthcare'); } }, h('i', { className: 'fa-solid fa-heart-pulse' }), ' Healthcare'),
+                h('button', { className: 'sample-pill', onClick: function() { loadPresetSample('hr'); } }, h('i', { className: 'fa-solid fa-user-group' }), ' General HR')
+              )
             ),
             h('form', { onSubmit: handleIngest },
               h('div', { className: 'form-grid' },
@@ -503,27 +869,40 @@
                   h('input', { type: 'text', className: 'form-control', value: ingestForm.userId, onChange: function(e) { setIngestForm(Object.assign({}, ingestForm, { userId: e.target.value })); }, required: true })
                 ),
                 h('div', { className: 'form-group' },
-                  h('label', null, 'Retention Window'),
+                  h('label', null, 'Retention Category Window'),
                   h('select', { className: 'form-control', value: ingestForm.retentionCategory, onChange: function(e) { setIngestForm(Object.assign({}, ingestForm, { retentionCategory: e.target.value })); } },
-                    h('option', { value: 'FINANCIAL' }, 'FINANCIAL (90-Day Retention)'),
-                    h('option', { value: 'HEALTHCARE' }, 'HEALTHCARE (365-Day Retention)'),
-                    h('option', { value: 'GENERAL' }, 'GENERAL (30-Day Retention)')
+                    policiesList.map(function(p) {
+                      return h('option', { key: p.category, value: p.category }, p.category + ' (' + p.retention_days + ' Days)');
+                    })
                   )
                 )
               ),
-              h('div', { className: 'form-group', style: { marginBottom: '1rem' } },
-                h('label', null, 'Raw Prompt (Contains PII)'),
+              h('div', { className: 'form-group', style: { marginBottom: '1.2rem' } },
+                h('label', null, 'Raw Prompt Input (Contains PII like Email, SSN, Phone)'),
                 h('textarea', { className: 'form-control', value: ingestForm.prompt, onChange: function(e) { setIngestForm(Object.assign({}, ingestForm, { prompt: e.target.value })); }, required: true })
               ),
-              h('div', { className: 'form-group', style: { marginBottom: '1rem' } },
-                h('label', null, 'Raw Response'),
+              h('div', { className: 'form-group', style: { marginBottom: '1.4rem' } },
+                h('label', null, 'Raw Agent Response Input'),
                 h('textarea', { className: 'form-control', value: ingestForm.response, onChange: function(e) { setIngestForm(Object.assign({}, ingestForm, { response: e.target.value })); }, required: true })
               ),
               h('button', { type: 'submit', className: 'btn' },
-                h('i', { className: 'fa-solid fa-paper-plane' }), ' Ingest & Tokenize PII'
+                h('i', { className: 'fa-solid fa-paper-plane' }), ' Ingest & Tokenize PII Redaction'
               )
             ),
-            ingestOutput ? h('div', { className: 'output-box' }, ingestOutput) : null
+            ingestOutput ? h('div', { className: 'output-box' }, ingestOutput) : null,
+            // Retention Time-Travel Simulator Card
+            h('div', { style: { marginTop: '2rem', paddingTop: '1.5rem', borderTop: '1px solid var(--card-border)' } },
+              h('div', { className: 'card-title', style: { fontSize: '1.1rem', marginBottom: '0.75rem' } },
+                h('i', { className: 'fa-solid fa-clock-rotate-left' }), ' Time-Travel Retention Sweep Simulator'
+              ),
+              h('p', { style: { color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: '1rem' } }, 'Simulate days advancing into the future to test automatic retention policy expiration (FINANCIAL=90d, HEALTHCARE=365d, GENERAL=30d).'),
+              h('div', { style: { display: 'flex', gap: '0.75rem', alignItems: 'center' } },
+                h('button', { className: 'btn btn-secondary', onClick: function() { handleTimeTravel(30); }, style: { fontSize: '0.82rem' } }, 'Simulate +30 Days'),
+                h('button', { className: 'btn btn-secondary', onClick: function() { handleTimeTravel(90); }, style: { fontSize: '0.82rem' } }, 'Simulate +90 Days'),
+                h('button', { className: 'btn btn-secondary', onClick: function() { handleTimeTravel(365); }, style: { fontSize: '0.82rem' } }, 'Simulate +365 Days')
+              ),
+              simResult ? h('div', { className: 'output-box' }, simResult) : null
+            )
           ) : null,
 
           // TAB 3: Tamper Verification
@@ -531,9 +910,10 @@
             h('div', { className: 'card-header' },
               h('div', { className: 'card-title' }, h('i', { className: 'fa-solid fa-shield-cat' }), ' SHA-256 Tamper Verification Engine')
             ),
-            h('div', { className: 'form-group', style: { marginBottom: '1rem' } },
-              h('label', null, 'Audit Log ID'),
-              h('input', { type: 'text', className: 'form-control', value: verifyLogId, onChange: function(e) { setVerifyLogId(e.target.value); }, placeholder: 'Enter UUID...' })
+            h('p', { style: { color: 'var(--text-muted)', fontSize: '0.9rem', marginBottom: '1.25rem' } }, 'Recomputes the canonical SHA-256 hash of stored audit records to detect any unauthorized database tampering.'),
+            h('div', { className: 'form-group', style: { marginBottom: '1.25rem' } },
+              h('label', null, 'Target Audit Record ID (UUID)'),
+              h('input', { type: 'text', className: 'form-control', value: verifyLogId, onChange: function(e) { setVerifyLogId(e.target.value); }, placeholder: 'e.g. 8a93ef20-410a-49bf-a6cb-91829f001abc' })
             ),
             h('button', { className: 'btn', onClick: handleVerifyTamper },
               h('i', { className: 'fa-solid fa-check-double' }), ' Verify Canonical Hash Integrity'
@@ -541,49 +921,88 @@
             tamperOutput ? h('div', { className: 'output-box' }, tamperOutput) : null
           ) : null,
 
-          // TAB 4: Access Audit Logs
+          // TAB 4: Access Audit Ledger & PII Decryption Vault (Admin)
           (activeTab === 'auditTab' && role === 'admin') ? h('div', { className: 'glass-card' },
             h('div', { className: 'card-header' },
-              h('div', { className: 'card-title' }, h('i', { className: 'fa-solid fa-eye' }), ' Immutable Log Access Audit Trail'),
-              h('button', { className: 'btn btn-secondary', onClick: fetchAccessLogs }, h('i', { className: 'fa-solid fa-rotate' }), ' Refresh Audit Logs')
+              h('div', { className: 'card-title' }, h('i', { className: 'fa-solid fa-eye' }), ' Immutable Log Access Audit Ledger'),
+              h('div', { style: { display: 'flex', gap: '0.5rem' } },
+                h('button', { className: 'btn btn-secondary', onClick: fetchAccessLogs }, h('i', { className: 'fa-solid fa-rotate' }), ' Refresh Access Trail'),
+                h('button', { className: 'btn btn-secondary', onClick: fetchPiiTokens }, h('i', { className: 'fa-solid fa-vault' }), ' Inspect PII Vault')
+              )
             ),
-            h('div', { className: 'data-table-container' },
+            h('div', { className: 'data-table-container', style: { marginBottom: '2rem' } },
               h('table', { className: 'data-table' },
                 h('thead', null,
                   h('tr', null,
-                    h('th', null, 'ID'),
+                    h('th', null, 'Log ID'),
                     h('th', null, 'Accessor Role'),
-                    h('th', null, 'Endpoint'),
-                    h('th', null, 'Details'),
-                    h('th', null, 'Timestamp (UTC)')
+                    h('th', null, 'Endpoint API'),
+                    h('th', null, 'Query / Details'),
+                    h('th', null, 'Access Timestamp (UTC)')
                   )
                 ),
                 h('tbody', null,
+                  accessLogs.length === 0 ? h('tr', null, h('td', { colSpan: 5, style: { textAlign: 'center', color: 'var(--text-muted)', padding: '2rem' } }, 'No access logs recorded yet.')) :
                   accessLogs.map(function(l) {
                     return h('tr', { key: l.id },
-                      h('td', null, '#' + l.id),
+                      h('td', { style: { fontFamily: 'var(--font-mono)', fontSize: '0.8rem' } }, '#' + l.id),
                       h('td', null, h('span', { className: 'tag tag-user' }, l.accessor_role)),
-                      h('td', { style: { fontFamily: 'var(--font-mono)', fontSize: '0.8rem' } }, l.endpoint),
-                      h('td', { style: { fontSize: '0.8rem' } }, l.query_details || '-'),
-                      h('td', { style: { fontSize: '0.8rem' } }, new Date(l.accessed_at).toLocaleString())
+                      h('td', { style: { fontFamily: 'var(--font-mono)', fontSize: '0.8rem', color: '#0284c7' } }, l.endpoint),
+                      h('td', { style: { fontSize: '0.82rem' } }, l.query_details || '-'),
+                      h('td', { style: { fontSize: '0.82rem', color: 'var(--text-muted)' } }, new Date(l.accessed_at).toLocaleString())
                     );
                   })
                 )
               )
-            )
+            ),
+            // PII Decryption Vault Section
+            piiTokens.length > 0 ? h('div', { style: { paddingTop: '1.5rem', borderTop: '1px solid var(--card-border)' } },
+              h('div', { className: 'card-title', style: { fontSize: '1.1rem', marginBottom: '0.75rem' } },
+                h('i', { className: 'fa-solid fa-key' }), ' Encrypted PII Token Vault (Admin Access Only)'
+              ),
+              h('p', { style: { color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: '1rem' } }, 'Every AES-256 decryption event is automatically logged to the Immutable Access Audit Ledger.'),
+              h('div', { className: 'data-table-container' },
+                h('table', { className: 'data-table' },
+                  h('thead', null,
+                    h('tr', null,
+                      h('th', null, 'Token Placeholder'),
+                      h('th', null, 'User ID'),
+                      h('th', null, 'Entity Type'),
+                      h('th', null, 'Action')
+                    )
+                  ),
+                  h('tbody', null,
+                    piiTokens.map(function(t) {
+                      return h('tr', { key: t.token },
+                        h('td', { style: { fontFamily: 'var(--font-mono)', fontSize: '0.82rem', color: '#4f46e5' } }, t.token),
+                        h('td', null, t.user_id),
+                        h('td', null, h('span', { className: 'tag tag-admin' }, t.entity_type)),
+                        h('td', null,
+                          h('button', { className: 'btn btn-secondary', style: { padding: '0.3rem 0.65rem', fontSize: '0.78rem' }, onClick: function() { handleDecryptToken(t.token); } },
+                            h('i', { className: 'fa-solid fa-unlock' }), ' Decrypt (Audit Logged)'
+                          )
+                        )
+                      );
+                    })
+                  )
+                )
+              ),
+              decryptResult ? h('div', { className: 'output-box' }, decryptResult) : null
+            ) : null
           ) : null,
 
-          // TAB 5: DSAR Portal
+          // TAB 5: DSAR Subject Portal
           (activeTab === 'dsarTab') ? h('div', { className: 'glass-card' },
             h('div', { className: 'card-header' },
-              h('div', { className: 'card-title' }, h('i', { className: 'fa-solid fa-id-card' }), ' DSAR Subject Portal')
+              h('div', { className: 'card-title' }, h('i', { className: 'fa-solid fa-id-card' }), ' Data Subject Access Request (DSAR) Portal')
             ),
-            h('div', { className: 'form-group', style: { marginBottom: '1rem' } },
-              h('label', null, 'User ID'),
-              h('input', { type: 'text', className: 'form-control', value: dsarUserId, onChange: function(e) { setDsarUserId(e.target.value); } })
+            h('p', { style: { color: 'var(--text-muted)', fontSize: '0.9rem', marginBottom: '1.25rem' } }, 'Execute GDPR/CCPA Data Subject Access Requests (DSAR) to audit or permanently sanitize user PII mappings.'),
+            h('div', { className: 'form-group', style: { marginBottom: '1.25rem' } },
+              h('label', null, 'Target User ID'),
+              h('input', { type: 'text', className: 'form-control', value: dsarUserId, onChange: function(e) { setDsarUserId(e.target.value); }, placeholder: 'e.g. usr_alice_99' })
             ),
-            h('div', { style: { display: 'flex', gap: '0.75rem' } },
-              h('button', { className: 'btn', onClick: function() { handleDSAR('report'); } }, h('i', { className: 'fa-solid fa-magnifying-glass' }), ' Generate DSAR Summary'),
+            h('div', { style: { display: 'flex', gap: '0.85rem' } },
+              h('button', { className: 'btn', onClick: function() { handleDSAR('report'); } }, h('i', { className: 'fa-solid fa-magnifying-glass' }), ' Generate DSAR Summary Report'),
               h('button', { className: 'btn btn-danger', onClick: function() { handleDSAR('delete'); } }, h('i', { className: 'fa-solid fa-trash-can' }), ' Request Right-to-Be-Forgotten Deletion')
             ),
             dsarOutput ? h('div', { className: 'output-box' }, dsarOutput) : null

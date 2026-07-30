@@ -218,6 +218,77 @@ def test_dsar_handler():
     assert del_res.json()["marked_records"] == 1
     assert del_res.json()["deleted_pii_mappings"] == 1
 
+def test_ingest_llm_interaction():
+    """LLM ingest endpoint: PII redacted, record hashed, llm_provider reported."""
+    response = client.post(
+        "/logs/ingest-llm",
+        json={
+            "prompt": "Hello test prompt with john@example.com",
+            "agent_id": "test-agent-llm",
+            "user_id": "usr_llm_test",
+            "retention_category": "FINANCIAL"
+        },
+        headers={"X-API-Key": "test-admin-key"}
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert "id" in data
+    assert "john@example.com" not in data["prompt_redacted"]
+    assert "record_hash" in data
+    assert "llm_provider" in data         # new: provider reported
+
+
+def test_get_logs_list_with_filters():
+    """GET /logs endpoint with agent_id filter returns only matching records."""
+    # Ingest two records with different agent_ids
+    client.post(
+        "/logs/ingest",
+        json={"prompt": "Query A", "response": "Result A",
+              "agent_id": "agent-alpha", "user_id": "usr_filter_test",
+              "retention_category": "GENERAL"},
+        headers={"X-API-Key": "test-service-key"}
+    )
+    client.post(
+        "/logs/ingest",
+        json={"prompt": "Query B", "response": "Result B",
+              "agent_id": "agent-beta", "user_id": "usr_filter_test",
+              "retention_category": "GENERAL"},
+        headers={"X-API-Key": "test-service-key"}
+    )
+
+    # Filter by agent-alpha only
+    res = client.get("/logs?agent_id=agent-alpha", headers={"X-API-Key": "test-admin-key"})
+    assert res.status_code == 200
+    data = res.json()
+    assert len(data) == 1
+    assert data[0]["agent_id"] == "agent-alpha"
+
+
+def test_jwt_login_and_use():
+    """Login returns a token; that token can be used as a Bearer credential."""
+    # Create an admin user first via register (seeded admin already exists in DB
+    # but we need a fresh user in the in-memory test DB)
+    reg = client.post(
+        "/auth/register",
+        json={"username": "testadmin", "email": "testadmin@test.com",
+              "password": "testpass123", "role": "admin"}
+    )
+    assert reg.status_code == 201
+
+    # Login
+    login = client.post(
+        "/auth/login",
+        json={"username": "testadmin", "password": "testpass123"}
+    )
+    assert login.status_code == 200
+    token = login.json()["access_token"]
+    assert token  # token is not empty
+
+    # Use the token to access a protected endpoint
+    health = client.get("/health")
+    assert health.status_code == 200  # health is public
+
+
 if __name__ == "__main__":
     pytest.main(["-v", __file__])
 

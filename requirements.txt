@@ -1,10 +1,36 @@
+# ── Core API framework ────────────────────────────────────────────────────────
 fastapi>=0.110.0
 uvicorn[standard]>=0.28.0
+
+# ── Database ──────────────────────────────────────────────────────────────────
 sqlalchemy>=2.0.0
-cryptography>=42.0.0
+psycopg2-binary>=2.9.9      # PostgreSQL driver (production)
+
+# ── Validation & config ───────────────────────────────────────────────────────
 pydantic>=2.6.0
 python-dotenv>=1.0.0
-psycopg2-binary>=2.9.9
+
+# ── Security & cryptography ───────────────────────────────────────────────────
+cryptography>=42.0.0         # AES-256 Fernet encryption for PII vault
+python-jose[cryptography]>=3.3.0  # JWT token creation and verification
+
+# ── LLM providers ──────────────────────────────────────────────────
+groq>=0.9.0                  # FREE — get key at https://console.groq.com
+openai>=1.30.0               # Paid backup for production/submission demos
+
+# ── PII detection (NER) ───────────────────────────────────────────────────────
+# spaCy NER for PERSON, ORG, GPE detection (optional but recommended)
+# After install, download model: python -m spacy download en_core_web_sm
+spacy>=3.7.0
+
+# ── Background scheduling ─────────────────────────────────────────────────────
+apscheduler>=3.10.0          # Hourly retention sweep background job
+
+# ── Observability ─────────────────────────────────────────────────────────────
+prometheus-fastapi-instrumentator>=6.1.0  # Prometheus metrics at /metrics
+
+# ── HTTP client & testing ─────────────────────────────────────────────────────
 requests>=2.31.0
 httpx>=0.27.0
 pytest>=8.0.0
+pytest-asyncio>=0.23.0
