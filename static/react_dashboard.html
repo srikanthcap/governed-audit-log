@@ -167,7 +167,9 @@
 
     function ReactGovernanceApp() {
       // Auth & App state
-      const [currentUser, setCurrentUser] = useState(JSON.parse(localStorage.getItem('governed_user')) || null);
+      const [currentUser, setCurrentUser] = useState(() => {
+        try { return JSON.parse(localStorage.getItem('governed_user')); } catch(e) { return null; }
+      });
       const [token, setToken] = useState(localStorage.getItem('governed_token') || null);
       const [activeTab, setActiveTab] = useState('usersTab');
       const [authMode, setAuthMode] = useState('login'); // 'login' or 'register'
@@ -329,14 +331,14 @@
         return (
           <div>
             <header>
-              <div class="brand">
-                <div class="brand-icon"><i class="fa-solid fa-shield-halved"></i></div>
-                <div class="brand-title">Governed Audit Log (React Portal)</div>
+              <div className="brand">
+                <div className="brand-icon"><i className="fa-solid fa-shield-halved"></i></div>
+                <div className="brand-title">Governed Audit Log (React Portal)</div>
               </div>
             </header>
 
-            <div class="container" style={{ maxWidth: '480px', marginTop: '4rem' }}>
-              <div class="glass-card">
+            <div className="container" style={{ maxWidth: '480px', marginTop: '4rem' }}>
+              <div className="glass-card">
                 <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem', borderBottom: '1px solid var(--card-border)' }}>
                   <button className={`tab-btn ${authMode === 'login' ? 'active' : ''}`} onClick={() => setAuthMode('login')} style={{ flex: 1, justifyContent: 'center' }}>Sign In</button>
                   <button className={`tab-btn ${authMode === 'register' ? 'active' : ''}`} onClick={() => setAuthMode('register')} style={{ flex: 1, justifyContent: 'center' }}>Register Account</button>
@@ -349,34 +351,34 @@
                 )}
 
                 <form onSubmit={handleAuthSubmit}>
-                  <div class="form-group" style={{ marginBottom: '1rem' }}>
+                  <div className="form-group" style={{ marginBottom: '1rem' }}>
                     <label>Username</label>
-                    <input type="text" class="form-control" value={authForm.username} onChange={e => setAuthForm({...authForm, username: e.target.value})} placeholder="admin or john_doe" required />
+                    <input type="text" className="form-control" value={authForm.username} onChange={e => setAuthForm({...authForm, username: e.target.value})} placeholder="admin or john_doe" required />
                   </div>
 
                   {authMode === 'register' && (
-                    <div class="form-group" style={{ marginBottom: '1rem' }}>
+                    <div className="form-group" style={{ marginBottom: '1rem' }}>
                       <label>Email Address</label>
-                      <input type="email" class="form-control" value={authForm.email} onChange={e => setAuthForm({...authForm, email: e.target.value})} placeholder="user@example.com" required />
+                      <input type="email" className="form-control" value={authForm.email} onChange={e => setAuthForm({...authForm, email: e.target.value})} placeholder="user@example.com" required />
                     </div>
                   )}
 
-                  <div class="form-group" style={{ marginBottom: '1rem' }}>
+                  <div className="form-group" style={{ marginBottom: '1rem' }}>
                     <label>Password</label>
-                    <input type="password" class="form-control" value={authForm.password} onChange={e => setAuthForm({...authForm, password: e.target.value})} placeholder="••••••••" required />
+                    <input type="password" className="form-control" value={authForm.password} onChange={e => setAuthForm({...authForm, password: e.target.value})} placeholder="••••••••" required />
                   </div>
 
                   {authMode === 'register' && (
-                    <div class="form-group" style={{ marginBottom: '1.25rem' }}>
+                    <div className="form-group" style={{ marginBottom: '1.25rem' }}>
                       <label>Requested Role</label>
-                      <select class="form-control" value={authForm.role} onChange={e => setAuthForm({...authForm, role: e.target.value})}>
+                      <select className="form-control" value={authForm.role} onChange={e => setAuthForm({...authForm, role: e.target.value})}>
                         <option value="user">Regular User (Requires Admin Verification)</option>
                         <option value="admin">Admin (Full Control)</option>
                       </select>
                     </div>
                   )}
 
-                  <button type="submit" class="btn" style={{ width: '100%', justifyContent: 'center' }}>
+                  <button type="submit" className="btn" style={{ width: '100%', justifyContent: 'center' }}>
                     <i className={authMode === 'login' ? "fa-solid fa-right-to-bracket" : "fa-solid fa-user-plus"}></i>
                     {authMode === 'login' ? 'Sign In to Portal' : 'Create Account'}
                   </button>
@@ -394,36 +396,34 @@
       // Logged In React Portal Render
       return (
         <div>
-          <!-- Header -->
           <header>
-            <div class="brand">
-              <div class="brand-icon"><i class="fa-solid fa-shield-halved"></i></div>
+            <div className="brand">
+              <div className="brand-icon"><i className="fa-solid fa-shield-halved"></i></div>
               <div>
-                <div class="brand-title">Governed Audit Log</div>
+                <div className="brand-title">Governed Audit Log</div>
                 <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Enterprise React Governance Portal</div>
               </div>
             </div>
 
             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-              <div class="user-profile-badge">
-                <i class="fa-solid fa-circle-user" style={{ color: 'var(--primary)' }}></i>
+              <div className="user-profile-badge">
+                <i className="fa-solid fa-circle-user" style={{ color: 'var(--primary)' }}></i>
                 <span><strong>{currentUser.username}</strong></span>
                 <span className={`tag ${currentUser.role === 'admin' ? 'tag-admin' : 'tag-user'}`}>{currentUser.role}</span>
                 <span className={`tag ${currentUser.is_approved ? 'tag-approved' : 'tag-pending'}`}>
                   {currentUser.is_approved ? 'Ability Approved' : 'Ability Pending'}
                 </span>
               </div>
-              <button class="btn btn-secondary" onClick={handleLogout} style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem' }}>
-                <i class="fa-solid fa-arrow-right-from-bracket"></i> Sign Out
+              <button className="btn btn-secondary" onClick={handleLogout} style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem' }}>
+                <i className="fa-solid fa-arrow-right-from-bracket"></i> Sign Out
               </button>
             </div>
           </header>
 
-          <!-- Main Container -->
-          <div class="container">
+          <div className="container">
             {!currentUser.is_approved && (
-              <div class="alert-banner">
-                <i class="fa-solid fa-triangle-exclamation" style={{ fontSize: '1.2rem' }}></i>
+              <div className="alert-banner">
+                <i className="fa-solid fa-triangle-exclamation" style={{ fontSize: '1.2rem' }}></i>
                 <div>
                   <strong>User Ability Status: Pending Admin Verification</strong>
                   <div style={{ fontSize: '0.85rem' }}>An administrator must inspect and approve your user abilities before advanced governance controls are unlocked.</div>
@@ -431,42 +431,40 @@
               </div>
             )}
 
-            <!-- Tabs -->
-            <div class="tabs">
+            <div className="tabs">
               {currentUser.role === 'admin' && (
                 <button className={`tab-btn ${activeTab === 'usersTab' ? 'active' : ''}`} onClick={() => setActiveTab('usersTab')}>
-                  <i class="fa-solid fa-users-gear"></i> Admin User Verification
+                  <i className="fa-solid fa-users-gear"></i> Admin User Verification
                 </button>
               )}
               <button className={`tab-btn ${activeTab === 'ingestTab' ? 'active' : ''}`} onClick={() => setActiveTab('ingestTab')}>
-                <i class="fa-solid fa-file-shield"></i> Log Ingestion & Redaction
+                <i className="fa-solid fa-file-shield"></i> Log Ingestion & Redaction
               </button>
               <button className={`tab-btn ${activeTab === 'tamperTab' ? 'active' : ''}`} onClick={() => setActiveTab('tamperTab')}>
-                <i class="fa-solid fa-fingerprint"></i> Tamper Verification
+                <i className="fa-solid fa-fingerprint"></i> Tamper Verification
               </button>
               {currentUser.role === 'admin' && (
                 <button className={`tab-btn ${activeTab === 'auditTab' ? 'active' : ''}`} onClick={() => { setActiveTab('auditTab'); fetchAccessLogs(); }}>
-                  <i class="fa-solid fa-list-check"></i> Log Access Audit
+                  <i className="fa-solid fa-list-check"></i> Log Access Audit
                 </button>
               )}
               <button className={`tab-btn ${activeTab === 'dsarTab' ? 'active' : ''}`} onClick={() => setActiveTab('dsarTab')}>
-                <i class="fa-solid fa-user-shield"></i> DSAR Portal
+                <i className="fa-solid fa-user-shield"></i> DSAR Portal
               </button>
             </div>
 
-            <!-- ADMIN TAB: User Ability Verification -->
             {activeTab === 'usersTab' && currentUser.role === 'admin' && (
-              <div class="glass-card">
-                <div class="card-header">
-                  <div class="card-title"><i class="fa-solid fa-user-check"></i> Admin User Verification & Ability Management</div>
-                  <button class="btn btn-secondary" onClick={fetchUsersList}><i class="fa-solid fa-rotate"></i> Refresh User List</button>
+              <div className="glass-card">
+                <div className="card-header">
+                  <div className="card-title"><i className="fa-solid fa-user-check"></i> Admin User Verification & Ability Management</div>
+                  <button className="btn btn-secondary" onClick={fetchUsersList}><i className="fa-solid fa-rotate"></i> Refresh User List</button>
                 </div>
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginBottom: '1.25rem' }}>
                   Inspect registered users, verify user abilities, and approve/revoke system privileges.
                 </p>
 
-                <div class="data-table-container">
-                  <table class="data-table">
+                <div className="data-table-container">
+                  <table className="data-table">
                     <thead>
                       <tr>
                         <th>User ID</th>
@@ -507,26 +505,25 @@
               </div>
             )}
 
-            <!-- INGEST TAB -->
             {activeTab === 'ingestTab' && (
-              <div class="glass-card">
-                <div class="card-header">
-                  <div class="card-title"><i class="fa-solid fa-wand-magic-sparkles"></i> Raw Log Ingestion & PII Redaction</div>
+              <div className="glass-card">
+                <div className="card-header">
+                  <div className="card-title"><i className="fa-solid fa-wand-magic-sparkles"></i> Raw Log Ingestion & PII Redaction</div>
                 </div>
 
                 <form onSubmit={handleIngest}>
-                  <div class="form-grid">
-                    <div class="form-group">
+                  <div className="form-grid">
+                    <div className="form-group">
                       <label>Agent ID</label>
-                      <input type="text" class="form-control" value={ingestForm.agentId} onChange={e => setIngestForm({...ingestForm, agentId: e.target.value})} required />
+                      <input type="text" className="form-control" value={ingestForm.agentId} onChange={e => setIngestForm({...ingestForm, agentId: e.target.value})} required />
                     </div>
-                    <div class="form-group">
+                    <div className="form-group">
                       <label>User ID</label>
-                      <input type="text" class="form-control" value={ingestForm.userId} onChange={e => setIngestForm({...ingestForm, userId: e.target.value})} required />
+                      <input type="text" className="form-control" value={ingestForm.userId} onChange={e => setIngestForm({...ingestForm, userId: e.target.value})} required />
                     </div>
-                    <div class="form-group">
+                    <div className="form-group">
                       <label>Retention Window</label>
-                      <select class="form-control" value={ingestForm.retentionCategory} onChange={e => setIngestForm({...ingestForm, retentionCategory: e.target.value})}>
+                      <select className="form-control" value={ingestForm.retentionCategory} onChange={e => setIngestForm({...ingestForm, retentionCategory: e.target.value})}>
                         <option value="FINANCIAL">FINANCIAL (90-Day Retention)</option>
                         <option value="HEALTHCARE">HEALTHCARE (365-Day Retention)</option>
                         <option value="GENERAL">GENERAL (30-Day Retention)</option>
@@ -534,51 +531,49 @@
                     </div>
                   </div>
 
-                  <div class="form-group" style={{ marginBottom: '1rem' }}>
+                  <div className="form-group" style={{ marginBottom: '1rem' }}>
                     <label>Raw Prompt (Contains PII)</label>
-                    <textarea class="form-control" value={ingestForm.prompt} onChange={e => setIngestForm({...ingestForm, prompt: e.target.value})} required />
+                    <textarea className="form-control" value={ingestForm.prompt} onChange={e => setIngestForm({...ingestForm, prompt: e.target.value})} required />
                   </div>
 
-                  <div class="form-group" style={{ marginBottom: '1rem' }}>
+                  <div className="form-group" style={{ marginBottom: '1rem' }}>
                     <label>Raw Response</label>
-                    <textarea class="form-control" value={ingestForm.response} onChange={e => setIngestForm({...ingestForm, response: e.target.value})} required />
+                    <textarea className="form-control" value={ingestForm.response} onChange={e => setIngestForm({...ingestForm, response: e.target.value})} required />
                   </div>
 
-                  <button type="submit" class="btn"><i class="fa-solid fa-paper-plane"></i> Ingest & Tokenize PII</button>
+                  <button type="submit" className="btn"><i className="fa-solid fa-paper-plane"></i> Ingest & Tokenize PII</button>
                 </form>
 
-                {ingestOutput && <div class="output-box">{ingestOutput}</div>}
+                {ingestOutput && <div className="output-box">{ingestOutput}</div>}
               </div>
             )}
 
-            <!-- TAMPER TAB -->
             {activeTab === 'tamperTab' && (
-              <div class="glass-card">
-                <div class="card-header">
-                  <div class="card-title"><i class="fa-solid fa-shield-cat"></i> SHA-256 Tamper Verification Engine</div>
+              <div className="glass-card">
+                <div className="card-header">
+                  <div className="card-title"><i className="fa-solid fa-shield-cat"></i> SHA-256 Tamper Verification Engine</div>
                 </div>
 
-                <div class="form-group" style={{ marginBottom: '1rem' }}>
+                <div className="form-group" style={{ marginBottom: '1rem' }}>
                   <label>Audit Log ID</label>
-                  <input type="text" class="form-control" value={verifyLogId} onChange={e => setVerifyLogId(e.target.value)} placeholder="Enter UUID..." />
+                  <input type="text" className="form-control" value={verifyLogId} onChange={e => setVerifyLogId(e.target.value)} placeholder="Enter UUID..." />
                 </div>
 
-                <button class="btn" onClick={handleVerifyTamper}><i class="fa-solid fa-check-double"></i> Verify Canonical Hash Integrity</button>
+                <button className="btn" onClick={handleVerifyTamper}><i className="fa-solid fa-check-double"></i> Verify Canonical Hash Integrity</button>
 
-                {tamperOutput && <div class="output-box">{tamperOutput}</div>}
+                {tamperOutput && <div className="output-box">{tamperOutput}</div>}
               </div>
             )}
 
-            <!-- ACCESS AUDIT TAB -->
             {activeTab === 'auditTab' && currentUser.role === 'admin' && (
-              <div class="glass-card">
-                <div class="card-header">
-                  <div class="card-title"><i class="fa-solid fa-eye"></i> Immutable Log Access Audit Trail</div>
-                  <button class="btn btn-secondary" onClick={fetchAccessLogs}><i class="fa-solid fa-rotate"></i> Refresh Audit Logs</button>
+              <div className="glass-card">
+                <div className="card-header">
+                  <div className="card-title"><i className="fa-solid fa-eye"></i> Immutable Log Access Audit Trail</div>
+                  <button className="btn btn-secondary" onClick={fetchAccessLogs}><i className="fa-solid fa-rotate"></i> Refresh Audit Logs</button>
                 </div>
 
-                <div class="data-table-container">
-                  <table class="data-table">
+                <div className="data-table-container">
+                  <table className="data-table">
                     <thead>
                       <tr>
                         <th>ID</th>
@@ -592,7 +587,7 @@
                       {accessLogs.map(l => (
                         <tr key={l.id}>
                           <td>#{l.id}</td>
-                          <td><span class="tag tag-user">{l.accessor_role}</span></td>
+                          <td><span className="tag tag-user">{l.accessor_role}</span></td>
                           <td style={{ fontFamily: 'var(--font-mono)', fontSize: '0.8rem' }}>{l.endpoint}</td>
                           <td style={{ fontSize: '0.8rem' }}>{l.query_details || '-'}</td>
                           <td style={{ fontSize: '0.8rem' }}>{new Date(l.accessed_at).toLocaleString()}</td>
@@ -604,24 +599,23 @@
               </div>
             )}
 
-            <!-- DSAR TAB -->
             {activeTab === 'dsarTab' && (
-              <div class="glass-card">
-                <div class="card-header">
-                  <div class="card-title"><i class="fa-solid fa-id-card"></i> DSAR Subject Portal</div>
+              <div className="glass-card">
+                <div className="card-header">
+                  <div className="card-title"><i className="fa-solid fa-id-card"></i> DSAR Subject Portal</div>
                 </div>
 
-                <div class="form-group" style={{ marginBottom: '1rem' }}>
+                <div className="form-group" style={{ marginBottom: '1rem' }}>
                   <label>User ID</label>
-                  <input type="text" class="form-control" value={dsarUserId} onChange={e => setDsarUserId(e.target.value)} />
+                  <input type="text" className="form-control" value={dsarUserId} onChange={e => setDsarUserId(e.target.value)} />
                 </div>
 
                 <div style={{ display: 'flex', gap: '0.75rem' }}>
-                  <button class="btn" onClick={() => handleDSAR('report')}><i class="fa-solid fa-magnifying-glass"></i> Generate DSAR Summary</button>
-                  <button class="btn btn-danger" onClick={() => handleDSAR('delete')}><i class="fa-solid fa-trash-can"></i> Request Right-to-Be-Forgotten Deletion</button>
+                  <button className="btn" onClick={() => handleDSAR('report')}><i className="fa-solid fa-magnifying-glass"></i> Generate DSAR Summary</button>
+                  <button className="btn btn-danger" onClick={() => handleDSAR('delete')}><i className="fa-solid fa-trash-can"></i> Request Right-to-Be-Forgotten Deletion</button>
                 </div>
 
-                {dsarOutput && <div class="output-box">{dsarOutput}</div>}
+                {dsarOutput && <div className="output-box">{dsarOutput}</div>}
               </div>
             )}
 
