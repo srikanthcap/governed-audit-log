@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Governed Audit Log — Enterprise React Governance Portal</title>
+  
+  <!-- React 18 & ReactDOM via CDN -->
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <!-- Google Fonts: Inter & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  
+  <style>
+    :root {
+      --bg-dark: #0b0f19;
+      --card-bg: rgba(18, 26, 43, 0.75);
+      --card-border: rgba(255, 255, 255, 0.08);
+      --primary: #6366f1;
+      --primary-glow: rgba(99, 102, 241, 0.35);
+      --secondary: #06b6d4;
+      --accent-green: #10b981;
+      --accent-red: #ef4444;
+      --accent-amber: #f59e0b;
+      --text-main: #f3f4f6;
+      --text-muted: #9ca3af;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
+
+    body {
+      background-color: var(--bg-dark);
+      background-image: 
+        radial-gradient(at 10% 10%, rgba(99, 102, 241, 0.15) 0px, transparent 50%),
+        radial-gradient(at 90% 90%, rgba(6, 182, 212, 0.12) 0px, transparent 50%);
+      background-attachment: fixed;
+      color: var(--text-main);
+      min-height: 100vh;
+    }
+
+    #root { display: flex; flex-direction: column; min-height: 100vh; }
+
+    /* Header & Navigation */
+    header {
+      background: rgba(11, 15, 25, 0.85);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--card-border);
+      padding: 1rem 2rem;
+      position: sticky; top: 0; z-index: 100;
+      display: flex; justify-content: space-between; align-items: center;
+    }
+
+    .brand { display: flex; align-items: center; gap: 0.75rem; }
+    .brand-icon {
+      width: 40px; height: 40px;
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      border-radius: 10px; display: flex; align-items: center; justify-content: center;
+      font-size: 1.2rem; color: white; box-shadow: 0 0 20px var(--primary-glow);
+    }
+    .brand-title {
+      font-size: 1.2rem; font-weight: 700;
+      background: linear-gradient(90deg, #ffffff, #94a3b8);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+
+    .user-profile-badge {
+      display: flex; align-items: center; gap: 0.75rem;
+      background: rgba(255, 255, 255, 0.04); border: 1px solid var(--card-border);
+      border-radius: 30px; padding: 0.35rem 1rem; font-size: 0.85rem;
+    }
+
+    /* Container Layout */
+    .container { max-width: 1400px; margin: 2rem auto; padding: 0 1.5rem; width: 100%; flex: 1; }
+
+    /* Glass Cards */
+    .glass-card {
+      background: var(--card-bg); backdrop-filter: blur(16px);
+      border: 1px solid var(--card-border); border-radius: 16px;
+      padding: 1.75rem; margin-bottom: 1.5rem;
+      box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+    }
+
+    .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; }
+    .card-title { font-size: 1.15rem; font-weight: 600; display: flex; align-items: center; gap: 0.6rem; }
+    .card-title i { color: var(--primary); }
+
+    /* Tabs Navigation */
+    .tabs { display: flex; gap: 0.75rem; border-bottom: 1px solid var(--card-border); margin-bottom: 2rem; overflow-x: auto; }
+    .tab-btn {
+      background: transparent; border: none; color: var(--text-muted);
+      padding: 0.75rem 1.25rem; font-weight: 500; font-size: 0.95rem; cursor: pointer;
+      display: flex; align-items: center; gap: 0.5rem; border-bottom: 2px solid transparent;
+      transition: all 0.2s ease;
+    }
+    .tab-btn:hover { color: var(--text-main); }
+    .tab-btn.active {
+      color: var(--primary); border-bottom-color: var(--primary);
+      background: rgba(99, 102, 241, 0.08); border-radius: 8px 8px 0 0;
+    }
+
+    /* Forms & Inputs */
+    .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.25rem; margin-bottom: 1.25rem; }
+    .form-group { display: flex; flex-direction: column; gap: 0.5rem; }
+    .form-group label { font-size: 0.85rem; color: var(--text-muted); font-weight: 500; }
+    .form-control {
+      background: rgba(0, 0, 0, 0.3); border: 1px solid var(--card-border);
+      border-radius: 8px; padding: 0.75rem 1rem; color: var(--text-main); font-size: 0.9rem; outline: none;
+    }
+    .form-control:focus { border-color: var(--primary); box-shadow: 0 0 0 2px var(--primary-glow); }
+    textarea.form-control { min-height: 100px; resize: vertical; }
+
+    /* Buttons */
+    .btn {
+      background: linear-gradient(135deg, var(--primary), #4f46e5);
+      color: white; border: none; border-radius: 8px; padding: 0.75rem 1.5rem;
+      font-size: 0.9rem; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 0.5rem;
+      transition: all 0.2s ease; box-shadow: 0 4px 14px 0 var(--primary-glow);
+    }
+    .btn:hover { opacity: 0.92; transform: translateY(-1px); }
+    .btn-secondary { background: rgba(255, 255, 255, 0.08); color: var(--text-main); box-shadow: none; border: 1px solid var(--card-border); }
+    .btn-secondary:hover { background: rgba(255, 255, 255, 0.15); }
+    .btn-success { background: linear-gradient(135deg, #10b981, #059669); box-shadow: 0 4px 14px 0 rgba(16, 185, 129, 0.35); }
+    .btn-danger { background: linear-gradient(135deg, #dc2626, #b91c1c); box-shadow: 0 4px 14px 0 rgba(220, 38, 38, 0.35); }
+
+    /* Output Console */
+    .output-box {
+      background: #070a12; border: 1px solid var(--card-border); border-radius: 10px;
+      padding: 1.25rem; font-family: var(--font-mono); font-size: 0.85rem; color: #38bdf8;
+      overflow-x: auto; white-space: pre-wrap; word-break: break-all; margin-top: 1rem;
+    }
+
+    /* Tables */
+    .data-table-container { overflow-x: auto; }
+    .data-table { width: 100%; border-collapse: collapse; font-size: 0.88rem; text-align: left; }
+    .data-table th { background: rgba(255, 255, 255, 0.03); color: var(--text-muted); padding: 0.85rem 1rem; font-weight: 600; border-bottom: 1px solid var(--card-border); }
+    .data-table td { padding: 1rem; border-bottom: 1px solid rgba(255, 255, 255, 0.04); color: var(--text-main); }
+    .data-table tr:hover { background: rgba(255, 255, 255, 0.02); }
+
+    /* Badges */
+    .tag { display: inline-block; padding: 0.25rem 0.65rem; border-radius: 6px; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em; }
+    .tag-admin { background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.4); }
+    .tag-user { background: rgba(99, 102, 241, 0.15); color: #818cf8; border: 1px solid rgba(99, 102, 241, 0.3); }
+    .tag-approved { background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); }
+    .tag-pending { background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); }
+
+    /* Alert Banners */
+    .alert-banner {
+      background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.3); color: #fbbf24;
+      padding: 1rem 1.25rem; border-radius: 12px; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.75rem;
+    }
+  </style>
+</head>
+<body>
+
+  <div id="root"></div>
+
+  <!-- React Application Component Script -->
+  <script type="text/babel">
+    const { useState, useEffect } = React;
+
+    function ReactGovernanceApp() {
+      // Auth & App state
+      const [currentUser, setCurrentUser] = useState(JSON.parse(localStorage.getItem('governed_user')) || null);
+      const [token, setToken] = useState(localStorage.getItem('governed_token') || null);
+      const [activeTab, setActiveTab] = useState('usersTab');
+      const [authMode, setAuthMode] = useState('login'); // 'login' or 'register'
+
+      // Form states
+      const [authForm, setAuthForm] = useState({ username: '', email: '', password: '', role: 'user' });
+      const [authMsg, setAuthMsg] = useState(null);
+
+      // Admin verification & logs state
+      const [usersList, setUsersList] = useState([]);
+      const [ingestForm, setIngestForm] = useState({
+        prompt: 'User email alice@example.com requested transfer for SSN 000-12-3456.',
+        response: 'Processed account transfer for alice@example.com successfully.',
+        agentId: 'finance-agent-01',
+        userId: 'usr_alice_99',
+        retentionCategory: 'FINANCIAL'
+      });
+      const [ingestOutput, setIngestOutput] = useState(null);
+      const [verifyLogId, setVerifyLogId] = useState('');
+      const [tamperOutput, setTamperOutput] = useState(null);
+      const [accessLogs, setAccessLogs] = useState([]);
+      const [dsarUserId, setDsarUserId] = useState('usr_alice_99');
+      const [dsarOutput, setDsarOutput] = useState(null);
+
+      // Load Users list when Admin Tab changes
+      useEffect(() => {
+        if (currentUser && currentUser.role === 'admin') {
+          fetchUsersList();
+        }
+      }, [currentUser, activeTab]);
+
+      const handleAuthSubmit = async (e) => {
+        e.preventDefault();
+        setAuthMsg({ type: 'info', text: 'Authenticating...' });
+
+        const endpoint = authMode === 'login' ? '/auth/login' : '/auth/register';
+        try {
+          const res = await fetch(endpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(authForm)
+          });
+          const data = await res.json();
+
+          if (res.ok) {
+            if (authMode === 'login') {
+              const userObj = { id: data.user_id, username: data.username, email: data.email, role: data.role, is_approved: data.is_approved };
+              setCurrentUser(userObj);
+              setToken(data.access_token);
+              localStorage.setItem('governed_user', JSON.stringify(userObj));
+              localStorage.setItem('governed_token', data.access_token);
+              setAuthMsg({ type: 'success', text: `Welcome back, ${data.username}!` });
+              setActiveTab(data.role === 'admin' ? 'usersTab' : 'ingestTab');
+            } else {
+              setAuthMsg({ type: 'success', text: data.message });
+              setAuthMode('login');
+            }
+          } else {
+            setAuthMsg({ type: 'error', text: data.detail || 'Authentication failed' });
+          }
+        } catch (err) {
+          setAuthMsg({ type: 'error', text: `Network Error: ${err.message}` });
+        }
+      };
+
+      const handleLogout = () => {
+        setCurrentUser(null);
+        setToken(null);
+        localStorage.removeItem('governed_user');
+        localStorage.removeItem('governed_token');
+      };
+
+      const getHeaders = () => {
+        const h = { 'Content-Type': 'application/json' };
+        if (token) h['Authorization'] = `Bearer ${token}`;
+        if (currentUser && currentUser.role === 'admin') h['X-API-Key'] = 'admin-secret-key-123';
+        else h['X-API-Key'] = 'service-secret-key-789';
+        return h;
+      };
+
+      const fetchUsersList = async () => {
+        try {
+          const res = await fetch('/admin/users', { headers: getHeaders() });
+          const data = await res.json();
+          if (res.ok) setUsersList(data);
+        } catch (err) { console.error('Error fetching users:', err); }
+      };
+
+      const toggleUserVerification = async (userId, currentStatus) => {
+        try {
+          const res = await fetch(`/admin/users/${userId}/verify`, {
+            method: 'POST',
+            headers: getHeaders(),
+            body: JSON.stringify({ is_approved: !currentStatus })
+          });
+          const data = await res.json();
+          if (res.ok) {
+            fetchUsersList();
+          } else { alert(`Verification failed: ${data.detail}`); }
+        } catch (err) { alert(`Error: ${err.message}`); }
+      };
+
+      const handleIngest = async (e) => {
+        e.preventDefault();
+        setIngestOutput('Ingesting log & applying PII tokenization...');
+        try {
+          const res = await fetch('/logs/ingest', {
+            method: 'POST',
+            headers: getHeaders(),
+            body: JSON.stringify({
+              prompt: ingestForm.prompt,
+              response: ingestForm.response,
+              agent_id: ingestForm.agentId,
+              user_id: ingestForm.userId,
+              retention_category: ingestForm.retentionCategory
+            })
+          });
+          const data = await res.json();
+          if (res.ok) {
+            setVerifyLogId(data.id);
+            setIngestOutput(`✅ Log Ingested Successfully!\n\nLog ID: ${data.id}\nRedacted Prompt: ${data.prompt_redacted}\nRedacted Response: ${data.response_redacted}\nRetention Expiry: ${data.retention_expires_at} (${data.retention_category})\nCanonical Hash: ${data.record_hash}`);
+          } else { setIngestOutput(`❌ Error (${res.status}): ${JSON.stringify(data, null, 2)}`); }
+        } catch (err) { setIngestOutput(`❌ Error: ${err.message}`); }
+      };
+
+      const handleVerifyTamper = async () => {
+        if (!verifyLogId) return alert('Please enter a Log ID');
+        setTamperOutput('Verifying SHA-256 canonical hash integrity...');
+        try {
+          const res = await fetch(`/verify/${verifyLogId}`, { headers: getHeaders() });
+          const data = await res.json();
+          if (res.ok) {
+            setTamperOutput(`🔍 Tamper Status: ${data.is_valid ? 'VALID ✅ (Untampered)' : 'TAMPERED ❌ (Hash Mismatch)'}\n\nLog ID: ${data.log_id}\nStored Hash: ${data.stored_hash}\nComputed Hash: ${data.computed_hash}`);
+          } else { setTamperOutput(`❌ Error: ${JSON.stringify(data)}`); }
+        } catch (err) { setTamperOutput(`❌ Error: ${err.message}`); }
+      };
+
+      const fetchAccessLogs = async () => {
+        try {
+          const res = await fetch('/access-logs', { headers: getHeaders() });
+          const data = await res.json();
+          if (res.ok) setAccessLogs(data);
+        } catch (err) { alert(`Error loading access logs: ${err.message}`); }
+      };
+
+      const handleDSAR = async (action) => {
+        setDsarOutput('Processing DSAR query...');
+        const endpoint = action === 'delete' ? `/dsar/${dsarUserId}/delete` : `/dsar/${dsarUserId}`;
+        const method = action === 'delete' ? 'POST' : 'GET';
+        try {
+          const res = await fetch(endpoint, { method, headers: getHeaders() });
+          const data = await res.json();
+          setDsarOutput(`📄 DSAR Result:\n${JSON.stringify(data, null, 2)}`);
+        } catch (err) { setDsarOutput(`❌ Error: ${err.message}`); }
+      };
+
+      // Render Login/Register if not logged in
+      if (!currentUser) {
+        return (
+          <div>
+            <header>
+              <div class="brand">
+                <div class="brand-icon"><i class="fa-solid fa-shield-halved"></i></div>
+                <div class="brand-title">Governed Audit Log (React Portal)</div>
+              </div>
+            </header>
+
+            <div class="container" style={{ maxWidth: '480px', marginTop: '4rem' }}>
+              <div class="glass-card">
+                <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem', borderBottom: '1px solid var(--card-border)' }}>
+                  <button className={`tab-btn ${authMode === 'login' ? 'active' : ''}`} onClick={() => setAuthMode('login')} style={{ flex: 1, justifyContent: 'center' }}>Sign In</button>
+                  <button className={`tab-btn ${authMode === 'register' ? 'active' : ''}`} onClick={() => setAuthMode('register')} style={{ flex: 1, justifyContent: 'center' }}>Register Account</button>
+                </div>
+
+                {authMsg && (
+                  <div style={{ padding: '0.75rem', borderRadius: '8px', marginBottom: '1rem', fontSize: '0.85rem', background: authMsg.type === 'error' ? 'rgba(239,68,68,0.2)' : 'rgba(16,185,129,0.2)', color: authMsg.type === 'error' ? '#f87171' : '#34d399' }}>
+                    {authMsg.text}
+                  </div>
+                )}
+
+                <form onSubmit={handleAuthSubmit}>
+                  <div class="form-group" style={{ marginBottom: '1rem' }}>
+                    <label>Username</label>
+                    <input type="text" class="form-control" value={authForm.username} onChange={e => setAuthForm({...authForm, username: e.target.value})} placeholder="admin or john_doe" required />
+                  </div>
+
+                  {authMode === 'register' && (
+                    <div class="form-group" style={{ marginBottom: '1rem' }}>
+                      <label>Email Address</label>
+                      <input type="email" class="form-control" value={authForm.email} onChange={e => setAuthForm({...authForm, email: e.target.value})} placeholder="user@example.com" required />
+                    </div>
+                  )}
+
+                  <div class="form-group" style={{ marginBottom: '1rem' }}>
+                    <label>Password</label>
+                    <input type="password" class="form-control" value={authForm.password} onChange={e => setAuthForm({...authForm, password: e.target.value})} placeholder="••••••••" required />
+                  </div>
+
+                  {authMode === 'register' && (
+                    <div class="form-group" style={{ marginBottom: '1.25rem' }}>
+                      <label>Requested Role</label>
+                      <select class="form-control" value={authForm.role} onChange={e => setAuthForm({...authForm, role: e.target.value})}>
+                        <option value="user">Regular User (Requires Admin Verification)</option>
+                        <option value="admin">Admin (Full Control)</option>
+                      </select>
+                    </div>
+                  )}
+
+                  <button type="submit" class="btn" style={{ width: '100%', justifyContent: 'center' }}>
+                    <i className={authMode === 'login' ? "fa-solid fa-right-to-bracket" : "fa-solid fa-user-plus"}></i>
+                    {authMode === 'login' ? 'Sign In to Portal' : 'Create Account'}
+                  </button>
+                </form>
+                
+                <div style={{ marginTop: '1.25rem', fontSize: '0.8rem', color: 'var(--text-muted)', textAlign: 'center' }}>
+                  Demo Admin Login: <strong>admin</strong> / <strong>admin123</strong>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      }
+
+      // Logged In React Portal Render
+      return (
+        <div>
+          <!-- Header -->
+          <header>
+            <div class="brand">
+              <div class="brand-icon"><i class="fa-solid fa-shield-halved"></i></div>
+              <div>
+                <div class="brand-title">Governed Audit Log</div>
+                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Enterprise React Governance Portal</div>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+              <div class="user-profile-badge">
+                <i class="fa-solid fa-circle-user" style={{ color: 'var(--primary)' }}></i>
+                <span><strong>{currentUser.username}</strong></span>
+                <span className={`tag ${currentUser.role === 'admin' ? 'tag-admin' : 'tag-user'}`}>{currentUser.role}</span>
+                <span className={`tag ${currentUser.is_approved ? 'tag-approved' : 'tag-pending'}`}>
+                  {currentUser.is_approved ? 'Ability Approved' : 'Ability Pending'}
+                </span>
+              </div>
+              <button class="btn btn-secondary" onClick={handleLogout} style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem' }}>
+                <i class="fa-solid fa-arrow-right-from-bracket"></i> Sign Out
+              </button>
+            </div>
+          </header>
+
+          <!-- Main Container -->
+          <div class="container">
+            {!currentUser.is_approved && (
+              <div class="alert-banner">
+                <i class="fa-solid fa-triangle-exclamation" style={{ fontSize: '1.2rem' }}></i>
+                <div>
+                  <strong>User Ability Status: Pending Admin Verification</strong>
+                  <div style={{ fontSize: '0.85rem' }}>An administrator must inspect and approve your user abilities before advanced governance controls are unlocked.</div>
+                </div>
+              </div>
+            )}
+
+            <!-- Tabs -->
+            <div class="tabs">
+              {currentUser.role === 'admin' && (
+                <button className={`tab-btn ${activeTab === 'usersTab' ? 'active' : ''}`} onClick={() => setActiveTab('usersTab')}>
+                  <i class="fa-solid fa-users-gear"></i> Admin User Verification
+                </button>
+              )}
+              <button className={`tab-btn ${activeTab === 'ingestTab' ? 'active' : ''}`} onClick={() => setActiveTab('ingestTab')}>
+                <i class="fa-solid fa-file-shield"></i> Log Ingestion & Redaction
+              </button>
+              <button className={`tab-btn ${activeTab === 'tamperTab' ? 'active' : ''}`} onClick={() => setActiveTab('tamperTab')}>
+                <i class="fa-solid fa-fingerprint"></i> Tamper Verification
+              </button>
+              {currentUser.role === 'admin' && (
+                <button className={`tab-btn ${activeTab === 'auditTab' ? 'active' : ''}`} onClick={() => { setActiveTab('auditTab'); fetchAccessLogs(); }}>
+                  <i class="fa-solid fa-list-check"></i> Log Access Audit
+                </button>
+              )}
+              <button className={`tab-btn ${activeTab === 'dsarTab' ? 'active' : ''}`} onClick={() => setActiveTab('dsarTab')}>
+                <i class="fa-solid fa-user-shield"></i> DSAR Portal
+              </button>
+            </div>
+
+            <!-- ADMIN TAB: User Ability Verification -->
+            {activeTab === 'usersTab' && currentUser.role === 'admin' && (
+              <div class="glass-card">
+                <div class="card-header">
+                  <div class="card-title"><i class="fa-solid fa-user-check"></i> Admin User Verification & Ability Management</div>
+                  <button class="btn btn-secondary" onClick={fetchUsersList}><i class="fa-solid fa-rotate"></i> Refresh User List</button>
+                </div>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginBottom: '1.25rem' }}>
+                  Inspect registered users, verify user abilities, and approve/revoke system privileges.
+                </p>
+
+                <div class="data-table-container">
+                  <table class="data-table">
+                    <thead>
+                      <tr>
+                        <th>User ID</th>
+                        <th>Username</th>
+                        <th>Email</th>
+                        <th>Role</th>
+                        <th>Ability Status</th>
+                        <th>Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {usersList.map(u => (
+                        <tr key={u.id}>
+                          <td style={{ fontFamily: 'var(--font-mono)', fontSize: '0.8rem' }}>{u.id.substring(0, 8)}...</td>
+                          <td><strong>{u.username}</strong></td>
+                          <td>{u.email}</td>
+                          <td><span className={`tag ${u.role === 'admin' ? 'tag-admin' : 'tag-user'}`}>{u.role}</span></td>
+                          <td>
+                            <span className={`tag ${u.is_approved ? 'tag-approved' : 'tag-pending'}`}>
+                              {u.is_approved ? 'APPROVED' : 'PENDING'}
+                            </span>
+                          </td>
+                          <td>
+                            <button
+                              className={`btn ${u.is_approved ? 'btn-danger' : 'btn-success'}`}
+                              style={{ padding: '0.35rem 0.75rem', fontSize: '0.8rem' }}
+                              onClick={() => toggleUserVerification(u.id, u.is_approved)}
+                            >
+                              <i className={u.is_approved ? "fa-solid fa-user-xmark" : "fa-solid fa-user-check"}></i>
+                              {u.is_approved ? 'Revoke Ability' : 'Approve Ability'}
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+            <!-- INGEST TAB -->
+            {activeTab === 'ingestTab' && (
+              <div class="glass-card">
+                <div class="card-header">
+                  <div class="card-title"><i class="fa-solid fa-wand-magic-sparkles"></i> Raw Log Ingestion & PII Redaction</div>
+                </div>
+
+                <form onSubmit={handleIngest}>
+                  <div class="form-grid">
+                    <div class="form-group">
+                      <label>Agent ID</label>
+                      <input type="text" class="form-control" value={ingestForm.agentId} onChange={e => setIngestForm({...ingestForm, agentId: e.target.value})} required />
+                    </div>
+                    <div class="form-group">
+                      <label>User ID</label>
+                      <input type="text" class="form-control" value={ingestForm.userId} onChange={e => setIngestForm({...ingestForm, userId: e.target.value})} required />
+                    </div>
+                    <div class="form-group">
+                      <label>Retention Window</label>
+                      <select class="form-control" value={ingestForm.retentionCategory} onChange={e => setIngestForm({...ingestForm, retentionCategory: e.target.value})}>
+                        <option value="FINANCIAL">FINANCIAL (90-Day Retention)</option>
+                        <option value="HEALTHCARE">HEALTHCARE (365-Day Retention)</option>
+                        <option value="GENERAL">GENERAL (30-Day Retention)</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div class="form-group" style={{ marginBottom: '1rem' }}>
+                    <label>Raw Prompt (Contains PII)</label>
+                    <textarea class="form-control" value={ingestForm.prompt} onChange={e => setIngestForm({...ingestForm, prompt: e.target.value})} required />
+                  </div>
+
+                  <div class="form-group" style={{ marginBottom: '1rem' }}>
+                    <label>Raw Response</label>
+                    <textarea class="form-control" value={ingestForm.response} onChange={e => setIngestForm({...ingestForm, response: e.target.value})} required />
+                  </div>
+
+                  <button type="submit" class="btn"><i class="fa-solid fa-paper-plane"></i> Ingest & Tokenize PII</button>
+                </form>
+
+                {ingestOutput && <div class="output-box">{ingestOutput}</div>}
+              </div>
+            )}
+
+            <!-- TAMPER TAB -->
+            {activeTab === 'tamperTab' && (
+              <div class="glass-card">
+                <div class="card-header">
+                  <div class="card-title"><i class="fa-solid fa-shield-cat"></i> SHA-256 Tamper Verification Engine</div>
+                </div>
+
+                <div class="form-group" style={{ marginBottom: '1rem' }}>
+                  <label>Audit Log ID</label>
+                  <input type="text" class="form-control" value={verifyLogId} onChange={e => setVerifyLogId(e.target.value)} placeholder="Enter UUID..." />
+                </div>
+
+                <button class="btn" onClick={handleVerifyTamper}><i class="fa-solid fa-check-double"></i> Verify Canonical Hash Integrity</button>
+
+                {tamperOutput && <div class="output-box">{tamperOutput}</div>}
+              </div>
+            )}
+
+            <!-- ACCESS AUDIT TAB -->
+            {activeTab === 'auditTab' && currentUser.role === 'admin' && (
+              <div class="glass-card">
+                <div class="card-header">
+                  <div class="card-title"><i class="fa-solid fa-eye"></i> Immutable Log Access Audit Trail</div>
+                  <button class="btn btn-secondary" onClick={fetchAccessLogs}><i class="fa-solid fa-rotate"></i> Refresh Audit Logs</button>
+                </div>
+
+                <div class="data-table-container">
+                  <table class="data-table">
+                    <thead>
+                      <tr>
+                        <th>ID</th>
+                        <th>Accessor Role</th>
+                        <th>Endpoint</th>
+                        <th>Details</th>
+                        <th>Timestamp (UTC)</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {accessLogs.map(l => (
+                        <tr key={l.id}>
+                          <td>#{l.id}</td>
+                          <td><span class="tag tag-user">{l.accessor_role}</span></td>
+                          <td style={{ fontFamily: 'var(--font-mono)', fontSize: '0.8rem' }}>{l.endpoint}</td>
+                          <td style={{ fontSize: '0.8rem' }}>{l.query_details || '-'}</td>
+                          <td style={{ fontSize: '0.8rem' }}>{new Date(l.accessed_at).toLocaleString()}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+            <!-- DSAR TAB -->
+            {activeTab === 'dsarTab' && (
+              <div class="glass-card">
+                <div class="card-header">
+                  <div class="card-title"><i class="fa-solid fa-id-card"></i> DSAR Subject Portal</div>
+                </div>
+
+                <div class="form-group" style={{ marginBottom: '1rem' }}>
+                  <label>User ID</label>
+                  <input type="text" class="form-control" value={dsarUserId} onChange={e => setDsarUserId(e.target.value)} />
+                </div>
+
+                <div style={{ display: 'flex', gap: '0.75rem' }}>
+                  <button class="btn" onClick={() => handleDSAR('report')}><i class="fa-solid fa-magnifying-glass"></i> Generate DSAR Summary</button>
+                  <button class="btn btn-danger" onClick={() => handleDSAR('delete')}><i class="fa-solid fa-trash-can"></i> Request Right-to-Be-Forgotten Deletion</button>
+                </div>
+
+                {dsarOutput && <div class="output-box">{dsarOutput}</div>}
+              </div>
+            )}
+
+          </div>
+        </div>
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<ReactGovernanceApp />);
+  </script>
+</body>
+</html>

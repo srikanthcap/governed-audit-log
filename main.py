@@ -5,7 +5,7 @@ from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
 from database import engine, Base, get_db
-from models import AuditRecord, PIIMapping, AccessAuditLog
+from models import AuditRecord, PIIMapping, AccessAuditLog, User
 from redaction import redact_text, decrypt_value
 from retention import calculate_retention_expiry, sweep_expired_records
 from security import (
@@ -13,11 +13,34 @@ from security import (
     require_role,
     compute_record_hash,
     verify_record_hash,
-    record_access_audit
+    record_access_audit,
+    hash_password,
+    verify_password
 )
 
 # Initialize database schema
 Base.metadata.create_all(bind=engine)
+
+# Seed default admin user on startup if not present
+def seed_admin_user():
+    db = SessionLocal()
+    try:
+        admin_user = db.query(User).filter_by(username="admin").first()
+        if not admin_user:
+            admin_user = User(
+                username="admin",
+                email="admin@governed.ai",
+                password_hash=hash_password("admin123"),
+                role="admin",
+                is_approved=True
+            )
+            db.add(admin_user)
+            db.commit()
+    finally:
+        db.close()
+
+from database import SessionLocal
+seed_admin_user()
 
 app = FastAPI(
     title="Governed Audit Log API",
@@ -26,6 +49,20 @@ app = FastAPI(
 )
 
 # Pydantic Request/Response Models
+class UserRegisterRequest(BaseModel):
+    username: str
+    email: str
+    password: str
+    role: Optional[str] = "user"
+
+class UserLoginRequest(BaseModel):
+    username: str
+    password: str
+
+class UserVerifyRequest(BaseModel):
+    is_approved: bool
+    role: Optional[str] = None
+
 class LogIngestRequest(BaseModel):
     prompt: str = Field(..., json_schema_extra={"example": "User email john@example.com asked about account 123456789"})
     response: str = Field(..., json_schema_extra={"example": "We processed request for john@example.com"})
@@ -56,6 +93,93 @@ class DSARResponse(BaseModel):
     pii_tokens_mapped: List[str]
     records: List[dict]
 
+# Auth & User Verification Routes
+
+@app.post("/auth/register", status_code=201)
+def register_user(payload: UserRegisterRequest, db: Session = Depends(get_db)):
+    existing = db.query(User).filter((User.username == payload.username) | (User.email == payload.email)).first()
+    if existing:
+        raise HTTPException(status_code=400, detail="Username or Email already registered")
+    
+    # Auto-approve admin user, regular users start pending approval
+    is_approved = True if payload.role == "admin" else False
+    user = User(
+        username=payload.username,
+        email=payload.email,
+        password_hash=hash_password(payload.password),
+        role=payload.role or "user",
+        is_approved=is_approved
+    )
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+    
+    return {
+        "id": user.id,
+        "username": user.username,
+        "email": user.email,
+        "role": user.role,
+        "is_approved": user.is_approved,
+        "message": "User registered successfully." if is_approved else "User registered. Pending admin approval for abilities."
+    }
+
+@app.post("/auth/login")
+def login_user(payload: UserLoginRequest, db: Session = Depends(get_db)):
+    user = db.query(User).filter_by(username=payload.username).first()
+    if not user or not verify_password(payload.password, user.password_hash):
+        raise HTTPException(status_code=401, detail="Invalid username or password")
+    
+    token = f"token-{user.role}" if user.role != "user" else f"token-user-{user.id}"
+    return {
+        "access_token": token,
+        "user_id": user.id,
+        "username": user.username,
+        "email": user.email,
+        "role": user.role,
+        "is_approved": user.is_approved
+    }
+
+@app.get("/admin/users")
+def list_users(db: Session = Depends(get_db), role: str = Depends(require_role(["admin"]))):
+    users = db.query(User).order_by(User.created_at.desc()).all()
+    return [
+        {
+            "id": u.id,
+            "username": u.username,
+            "email": u.email,
+            "role": u.role,
+            "is_approved": u.is_approved,
+            "created_at": u.created_at.isoformat()
+        } for u in users
+    ]
+
+@app.post("/admin/users/{user_id}/verify")
+def verify_user_ability(user_id: str, payload: UserVerifyRequest, db: Session = Depends(get_db), role: str = Depends(require_role(["admin"]))):
+    user = db.query(User).filter_by(id=user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    user.is_approved = payload.is_approved
+    if payload.role:
+        user.role = payload.role
+    db.commit()
+    db.refresh(user)
+    
+    record_access_audit(
+        db,
+        accessor_role=role,
+        endpoint=f"/admin/users/{user_id}/verify",
+        query_details=f"Admin updated user {user.username} ability to is_approved={user.is_approved}, role={user.role}"
+    )
+    
+    return {
+        "status": "success",
+        "user_id": user.id,
+        "username": user.username,
+        "is_approved": user.is_approved,
+        "role": user.role
+    }
+
 # Routes
 
 from sqlalchemy import text
@@ -69,17 +193,19 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 @app.get("/")
 def root_endpoint():
     return {
-        "service": "Governed Audit Log API",
+        "service": "Governed Audit Log React API",
         "status": "online",
+        "react_portal": "/react",
         "dashboard": "/dashboard",
         "documentation": "/docs",
         "health_check": "/health",
         "version": "1.0.0"
     }
 
+@app.get("/react", response_class=HTMLResponse)
 @app.get("/dashboard", response_class=HTMLResponse)
 def get_dashboard():
-    return FileResponse("static/dashboard.html")
+    return FileResponse("static/react_dashboard.html")
 
 @app.get("/health")
 def health_check(db: Session = Depends(get_db)):
