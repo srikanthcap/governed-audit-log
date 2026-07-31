@@ -3,6 +3,8 @@
 > **Enterprise-grade data governance and security layer for sensitive AI interaction logs.**
 > Built with FastAPI · SQLAlchemy (PostgreSQL/SQLite) · spaCy NER + Regex Redaction · AES-256 Fernet Vault · SHA-256 Tamper Detection · JWT + API Key Auth · Prometheus Observability · React Governance Dashboard.
 
+🚀 **Live AWS Deployment Portal**: [http://13.201.71.15:8000/dashboard](http://13.201.71.15:8000/dashboard)
+
 ---
 
 ## System Architecture & Data Flow
@@ -97,8 +99,10 @@ OPENAI_API_KEY=your-openai-key  # Optional: for live OpenAI governance
 ```bash
 uvicorn main:app --reload --port 8000
 ```
-- **API Docs**: [http://localhost:8000/docs](http://localhost:8000/docs)
-- **Governance Portal (UI)**: [http://localhost:8000/dashboard](http://localhost:8000/dashboard)
+- **API Docs (Local)**: [http://localhost:8000/docs](http://localhost:8000/docs)
+- **Governance Portal (Local UI)**: [http://localhost:8000/dashboard](http://localhost:8000/dashboard)
+- **API Docs (Live AWS)**: [http://13.201.71.15:8000/docs](http://13.201.71.15:8000/docs)
+- **Governance Portal (Live AWS UI)**: [http://13.201.71.15:8000/dashboard](http://13.201.71.15:8000/dashboard)
 
 ---
 
