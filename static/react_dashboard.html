@@ -319,6 +319,8 @@
       const [ingestMode, setIngestMode] = useState('manual');
       const [policiesList, setPoliciesList] = useState([]);
       const [newPolicyForm, setNewPolicyForm] = useState({ category: '', retentionDays: 30 });
+      const [agentClassificationsList, setAgentClassificationsList] = useState([]);
+      const [newAgentClassForm, setNewAgentClassForm] = useState({ agentId: '', regulatoryClassification: 'FINANCIAL' });
 
       const showToast = function(message, type) {
         setToast({ message: message, type: type || 'success' });
@@ -329,6 +331,7 @@
         fetchPoliciesList();
         if (currentUser && currentUser.role === 'admin') {
           fetchUsersList();
+          fetchAgentClassifications();
         }
       }, [currentUser, activeTab]);
 
@@ -446,6 +449,48 @@
             showToast('Retention policy ' + category + ' deleted.', 'success');
             fetchPoliciesList();
           } else { showToast('Failed to delete policy: ' + (data.detail || JSON.stringify(data)), 'error'); }
+        } catch (err) { showToast('Error: ' + err.message, 'error'); }
+      };
+
+      const fetchAgentClassifications = async function() {
+        try {
+          const res = await fetch('/admin/agent-classifications', { headers: getHeaders() });
+          const data = await res.json();
+          if (res.ok && Array.isArray(data)) setAgentClassificationsList(data);
+        } catch (err) { console.error('Error fetching classifications:', err); }
+      };
+
+      const handleUpsertAgentClass = async function(e) {
+        if (e) e.preventDefault();
+        try {
+          const res = await fetch('/admin/agent-classifications', {
+            method: 'POST',
+            headers: getHeaders(),
+            body: JSON.stringify({
+              agent_id: newAgentClassForm.agentId,
+              regulatory_classification: newAgentClassForm.regulatoryClassification
+            })
+          });
+          const data = await res.json();
+          if (res.ok) {
+            showToast('Agent classification updated successfully!', 'success');
+            setNewAgentClassForm({ agentId: '', regulatoryClassification: 'FINANCIAL' });
+            fetchAgentClassifications();
+          } else { showToast('Failed to save agent classification: ' + (data.detail || JSON.stringify(data)), 'error'); }
+        } catch (err) { showToast('Error: ' + err.message, 'error'); }
+      };
+
+      const handleDeleteAgentClass = async function(agentId) {
+        try {
+          const res = await fetch('/admin/agent-classifications/' + agentId, {
+            method: 'DELETE',
+            headers: getHeaders()
+          });
+          const data = await res.json();
+          if (res.ok) {
+            showToast('Agent classification deleted.', 'success');
+            fetchAgentClassifications();
+          } else { showToast('Failed to delete agent classification: ' + (data.detail || JSON.stringify(data)), 'error'); }
         } catch (err) { showToast('Error: ' + err.message, 'error'); }
       };
 
@@ -836,6 +881,76 @@
                           className: 'btn btn-danger',
                           style: { padding: '0.4rem 0.85rem', fontSize: '0.82rem' },
                           onClick: function() { handleDeletePolicy(p.category); }
+                        },
+                          h('i', { className: 'fa-solid fa-trash-can' }), ' Delete'
+                        )
+                      )
+                    );
+                  })
+                )
+              )
+            )
+          ) : null,
+
+          // TAB 1 (Extended 2): Agent Classification Management (Admin only)
+          (activeTab === 'usersTab' && role === 'admin') ? h('div', { className: 'glass-card', style: { marginTop: '2rem' } },
+            h('div', { className: 'card-header' },
+              h('div', { className: 'card-title' }, h('i', { className: 'fa-solid fa-robot' }), ' Agent Regulatory Classifications'),
+              h('button', { className: 'btn btn-secondary', onClick: fetchAgentClassifications }, h('i', { className: 'fa-solid fa-rotate' }), ' Refresh Agents')
+            ),
+            h('p', { style: { color: 'var(--text-muted)', fontSize: '0.9rem', marginBottom: '1.25rem' } }, 'Map agent IDs to specific regulatory retention categories. Ingested logs without a category will automatically inherit these settings.'),
+            
+            // Add/Update Classification Form
+            h('form', { onSubmit: handleUpsertAgentClass, style: { display: 'flex', gap: '1rem', alignItems: 'flex-end', marginBottom: '1.75rem', flexWrap: 'wrap' } },
+              h('div', { className: 'form-group', style: { flex: 1, minWidth: '180px' } },
+                h('label', null, 'Agent ID (e.g. finance-agent-01)'),
+                h('input', {
+                  type: 'text',
+                  className: 'form-control',
+                  value: newAgentClassForm.agentId,
+                  onChange: function(e) { setNewAgentClassForm(Object.assign({}, newAgentClassForm, { agentId: e.target.value })); },
+                  placeholder: 'e.g. support-agent-01',
+                  required: true
+                })
+              ),
+              h('div', { className: 'form-group', style: { flex: 1, minWidth: '150px' } },
+                h('label', null, 'Regulatory Category'),
+                h('select', {
+                  className: 'form-control',
+                  value: newAgentClassForm.regulatoryClassification,
+                  onChange: function(e) { setNewAgentClassForm(Object.assign({}, newAgentClassForm, { regulatoryClassification: e.target.value })); }
+                },
+                  policiesList.map(function(p) {
+                    return h('option', { key: p.category, value: p.category }, p.category);
+                  })
+                )
+              ),
+              h('button', { type: 'submit', className: 'btn', style: { height: '42px', padding: '0 1.5rem' } },
+                h('i', { className: 'fa-solid fa-floppy-disk' }), ' Save Classification'
+              )
+            ),
+
+            // Classifications Table
+            h('div', { className: 'data-table-container' },
+              h('table', { className: 'data-table' },
+                h('thead', null,
+                  h('tr', null,
+                    h('th', null, 'Agent ID'),
+                    h('th', null, 'Regulatory Classification'),
+                    h('th', null, 'Actions')
+                  )
+                ),
+                h('tbody', null,
+                  agentClassificationsList.length === 0 ? h('tr', null, h('td', { colSpan: 3, style: { textAlign: 'center', color: 'var(--text-muted)', padding: '1.5rem' } }, 'No agent classifications mapped yet.')) :
+                  agentClassificationsList.map(function(c) {
+                    return h('tr', { key: c.agent_id },
+                      h('td', null, h('strong', null, c.agent_id)),
+                      h('td', null, h('span', { className: 'tag tag-user' }, c.regulatory_classification)),
+                      h('td', null,
+                        h('button', {
+                          className: 'btn btn-danger',
+                          style: { padding: '0.4rem 0.85rem', fontSize: '0.82rem' },
+                          onClick: function() { handleDeleteAgentClass(c.agent_id); }
                         },
                           h('i', { className: 'fa-solid fa-trash-can' }), ' Delete'
                         )
