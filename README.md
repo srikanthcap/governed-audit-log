@@ -99,8 +99,6 @@ OPENAI_API_KEY=your-openai-key  # Optional: for live OpenAI governance
 ```bash
 uvicorn main:app --reload --port 8000
 ```
-- **API Docs (Local)**: [http://localhost:8000/docs](http://localhost:8000/docs)
-- **Governance Portal (Local UI)**: [http://localhost:8000/dashboard](http://localhost:8000/dashboard)
 - **API Docs (Live AWS)**: [http://13.201.71.15:8000/docs](http://13.201.71.15:8000/docs)
 - **Governance Portal (Live AWS UI)**: [http://13.201.71.15:8000/dashboard](http://13.201.71.15:8000/dashboard)
 
