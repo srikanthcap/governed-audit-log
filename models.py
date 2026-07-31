@@ -24,6 +24,12 @@ class RetentionPolicy(Base):
     category = Column(String(50), primary_key=True)
     retention_days = Column(Integer, nullable=False)
 
+class AgentClassification(Base):
+    __tablename__ = "agent_classifications"
+
+    agent_id = Column(String(100), primary_key=True)
+    regulatory_classification = Column(String(50), nullable=False)
+
 class PIIMapping(Base):
     __tablename__ = "pii_mappings"
 

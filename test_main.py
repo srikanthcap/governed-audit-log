@@ -19,7 +19,7 @@ os.environ["PII_ENCRYPTION_KEY"] = "gK4P1Xz8Z9R7W2Y6A3B5C8D1E4F7G0H3I6J9K2L5M8N=
 
 from database import Base, get_db
 from main import app
-from models import AuditRecord, AccessAuditLog, PIIMapping
+from models import AuditRecord, AccessAuditLog, PIIMapping, AgentClassification
 
 from sqlalchemy.pool import StaticPool
 
@@ -289,6 +289,174 @@ def test_jwt_login_and_use():
     assert health.status_code == 200  # health is public
 
 
+def test_ingest_with_explicit_timestamp():
+    """Verify that passing an explicit timestamp sets it on the record, expires_at is relative, and hash is correct."""
+    custom_ts = datetime(2026, 6, 1, 12, 0, 0, tzinfo=timezone.utc)
+    
+    response = client.post(
+        "/logs/ingest",
+        json={
+            "prompt": "Test explicit timestamp prompt",
+            "response": "Test explicit timestamp response",
+            "agent_id": "test-agent-ts",
+            "user_id": "usr_ts_test",
+            "retention_category": "GENERAL",
+            "timestamp": custom_ts.isoformat()
+        },
+        headers={"X-API-Key": "test-service-key"}
+    )
+    assert response.status_code == 201
+    data = response.json()
+    
+    # Assert timestamp is correct
+    assert data["timestamp"].startswith("2026-06-01T12:00:00")
+    # GENERAL has 30 days retention, so expires_at should be 2026-07-01T12:00:00
+    assert data["retention_expires_at"].startswith("2026-07-01T12:00:00")
+
+
+def test_agent_regulatory_classification():
+    """Verify auto-tagging from database mapping, keyword heuristics, and the CRUD endpoints."""
+    # 1. Test upsert classification via API
+    upsert_res = client.post(
+        "/admin/agent-classifications",
+        json={
+            "agent_id": "custom-billing-agent",
+            "regulatory_classification": "FINANCIAL"
+        },
+        headers={"X-API-Key": "test-admin-key"}
+    )
+    assert upsert_res.status_code == 201
+    assert upsert_res.json()["status"] == "created"
+    
+    # 2. Ingest without specifying retention category — should lookup from DB classification
+    ingest_db_res = client.post(
+        "/logs/ingest",
+        json={
+            "prompt": "User billing check",
+            "response": "Invoice sent",
+            "agent_id": "custom-billing-agent",
+            "user_id": "usr_billing_test"
+        },
+        headers={"X-API-Key": "test-service-key"}
+    )
+    assert ingest_db_res.status_code == 201
+    assert ingest_db_res.json()["retention_category"] == "FINANCIAL"
+    
+    # 3. Ingest without specifying retention category — should fallback to keyword heuristic (health -> HEALTHCARE)
+    ingest_heuristic_res = client.post(
+        "/logs/ingest",
+        json={
+            "prompt": "Patient prescription check",
+            "response": "Refill confirmed",
+            "agent_id": "clinical-care-health-bot",
+            "user_id": "usr_health_test"
+        },
+        headers={"X-API-Key": "test-service-key"}
+    )
+    assert ingest_heuristic_res.status_code == 201
+    assert ingest_heuristic_res.json()["retention_category"] == "HEALTHCARE"
+
+    # 4. Ingest without specifying retention category & no matching keyword -> should default to GENERAL
+    ingest_default_res = client.post(
+        "/logs/ingest",
+        json={
+            "prompt": "Standard request",
+            "response": "Standard reply",
+            "agent_id": "unknown-helper-agent",
+            "user_id": "usr_general_test"
+        },
+        headers={"X-API-Key": "test-service-key"}
+    )
+    assert ingest_default_res.status_code == 201
+    assert ingest_default_res.json()["retention_category"] == "GENERAL"
+
+    # 5. List and delete classifications
+    list_res = client.get("/admin/agent-classifications", headers={"X-API-Key": "test-admin-key"})
+    assert list_res.status_code == 200
+    agents = [a["agent_id"] for a in list_res.json()]
+    assert "custom-billing-agent" in agents
+
+    delete_res = client.delete("/admin/agent-classifications/custom-billing-agent", headers={"X-API-Key": "test-admin-key"})
+    assert delete_res.status_code == 200
+
+
+def test_reveal_blocked_for_expired_or_deleted():
+    """Verify that `/reveal` returns HTTP 410 Gone for expired or deleted logs."""
+    # 1. Ingest log record
+    ingest_res = client.post(
+        "/logs/ingest",
+        json={
+            "prompt": "Secret data for john@example.com",
+            "response": "Response data",
+            "agent_id": "secure-agent",
+            "user_id": "usr_expired_reveal",
+            "retention_category": "GENERAL"
+        },
+        headers={"X-API-Key": "test-service-key"}
+    )
+    record_id = ingest_res.json()["id"]
+
+    # Verify reveal works initially
+    reveal_init = client.get(f"/logs/{record_id}/reveal", headers={"X-API-Key": "test-admin-key"})
+    assert reveal_init.status_code == 200
+    assert "john@example.com" in reveal_init.json()["prompt_revealed"]
+
+    # 2. Expire the record
+    db = TestingSessionLocal()
+    rec = db.query(AuditRecord).filter_by(id=record_id).first()
+    rec.is_expired = True
+    db.commit()
+    db.close()
+
+    # Verify reveal is now blocked
+    reveal_exp = client.get(f"/logs/{record_id}/reveal", headers={"X-API-Key": "test-admin-key"})
+    assert reveal_exp.status_code == 410
+    assert "expired" in reveal_exp.json()["detail"]
+
+
+def test_pii_mapping_purged_on_sweep():
+    """Verify that orphaned PII mappings are deleted from the database during retention sweep."""
+    now = datetime.now(timezone.utc)
+    
+    # 1. Ingest a record with PII mapping
+    ingest_res = client.post(
+        "/logs/ingest",
+        json={
+            "prompt": "Secret details for secret@example.com",
+            "response": "Result",
+            "agent_id": "finance-agent",
+            "user_id": "usr_purge_test",
+            "retention_category": "FINANCIAL"
+        },
+        headers={"X-API-Key": "test-service-key"}
+    )
+    record_id = ingest_res.json()["id"]
+    
+    # Verify PIIMapping exists
+    db = TestingSessionLocal()
+    mappings = db.query(PIIMapping).filter_by(user_id="usr_purge_test").all()
+    assert len(mappings) == 1
+    db.close()
+
+    # 2. Backdate expires_at and run sweep
+    db = TestingSessionLocal()
+    rec = db.query(AuditRecord).filter_by(id=record_id).first()
+    rec.retention_expires_at = now - timedelta(days=1)
+    db.commit()
+    db.close()
+
+    # Sweep
+    sweep_res = client.post("/retention/sweep", headers={"X-API-Key": "test-admin-key"})
+    assert sweep_res.status_code == 200
+    
+    # Verify mapping is deleted
+    db = TestingSessionLocal()
+    mappings_after = db.query(PIIMapping).filter_by(user_id="usr_purge_test").all()
+    assert len(mappings_after) == 0
+    db.close()
+
+
 if __name__ == "__main__":
     pytest.main(["-v", __file__])
+
 

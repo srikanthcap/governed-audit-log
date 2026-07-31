@@ -23,6 +23,13 @@ import uuid
 import os
 import logging
 
+# Load .env file for local development
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass  # python-dotenv not installed — rely on system env vars
+
 from fastapi import FastAPI, Depends, HTTPException, status, Query
 from fastapi.responses import HTMLResponse, FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
@@ -32,7 +39,7 @@ from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from database import engine, Base, get_db, SessionLocal
-from models import AuditRecord, PIIMapping, AccessAuditLog, User, RetentionPolicy
+from models import AuditRecord, PIIMapping, AccessAuditLog, User, RetentionPolicy, AgentClassification
 from redaction import redact_text, decrypt_value, get_redaction_capabilities
 from retention import (
     calculate_retention_expiry,
@@ -98,8 +105,32 @@ def seed_retention_policies():
     finally:
         db.close()
 
+def seed_agent_classifications():
+    db = SessionLocal()
+    try:
+        defaults = {
+            "finance-agent-01": "FINANCIAL",
+            "health-agent-01": "HEALTHCARE",
+            "billing-agent-01": "FINANCIAL",
+            "support-agent-01": "GENERAL"
+        }
+        for agent_id, classification in defaults.items():
+            existing = db.query(AgentClassification).filter_by(agent_id=agent_id).first()
+            if not existing:
+                db.add(AgentClassification(agent_id=agent_id, regulatory_classification=classification))
+            elif existing.regulatory_classification != classification:
+                existing.regulatory_classification = classification
+        db.commit()
+        logger.info("[Seed] Agent classifications seeded.")
+    except Exception as e:
+        logger.error(f"[Seed] Failed to seed agent classifications: {e}")
+    finally:
+        db.close()
+
 seed_admin_user()
 seed_retention_policies()
+seed_agent_classifications()
+
 
 # ─── App lifespan (startup / shutdown) ───────────────────────────────────────
 
@@ -170,7 +201,12 @@ class LogIngestRequest(BaseModel):
     response: str          = Field(..., example="We processed request for john@example.com")
     agent_id: str          = Field(..., example="finance-agent-01")
     user_id: str           = Field(..., example="usr_98765")
-    retention_category: Optional[str] = Field("FINANCIAL", example="FINANCIAL")
+    retention_category: Optional[str] = Field(None, example="FINANCIAL")
+    timestamp: Optional[datetime] = Field(None, example="2026-07-31T09:00:00Z")
+
+class AgentClassificationRequest(BaseModel):
+    agent_id: str = Field(..., example="finance-agent-01")
+    regulatory_classification: str = Field(..., example="FINANCIAL")
 
 class LogIngestResponse(BaseModel):
     id: str
@@ -223,7 +259,8 @@ class IngestLLMRequest(BaseModel):
     prompt: str            = Field(..., example="User email john@example.com asks about account 123456789")
     agent_id: str          = Field("ai-governance-agent-01", example="ai-governance-agent-01")
     user_id: str           = Field("usr_sample_99",           example="usr_sample_99")
-    retention_category: Optional[str] = Field("FINANCIAL", example="FINANCIAL")
+    retention_category: Optional[str] = Field(None, example="FINANCIAL")
+    timestamp: Optional[datetime] = Field(None, example="2026-07-31T09:00:00Z")
 
 # ─── Utility ──────────────────────────────────────────────────────────────────
 
@@ -243,15 +280,61 @@ def _save_pii_mappings(db: Session, mappings: list) -> None:
         if not db.query(PIIMapping).filter_by(token=pii.token).first():
             db.add(pii)
 
+# Suffix/keyword heuristics mapping for agent classification
+AGENT_CLASSIFICATION_MAP = {
+    "finance": "FINANCIAL",
+    "billing": "FINANCIAL",
+    "payment": "FINANCIAL",
+    "banking": "FINANCIAL",
+    "wallet": "FINANCIAL",
+    "checkout": "FINANCIAL",
+    "health": "HEALTHCARE",
+    "medical": "HEALTHCARE",
+    "patient": "HEALTHCARE",
+    "clinical": "HEALTHCARE",
+    "hospital": "HEALTHCARE",
+    "support": "GENERAL",
+    "sales": "GENERAL",
+    "marketing": "GENERAL",
+}
+
+def resolve_agent_retention_category(db: Session, agent_id: str) -> str:
+    """Resolve regulatory category based on agent_id's classification."""
+    # 1. Check database classifications
+    from models import AgentClassification
+    db_classification = db.query(AgentClassification).filter_by(agent_id=agent_id).first()
+    if db_classification:
+        return db_classification.regulatory_classification
+    
+    # 2. Heuristic check
+    agent_lower = agent_id.lower()
+    for keyword, category in AGENT_CLASSIFICATION_MAP.items():
+        if keyword in agent_lower:
+            return category
+            
+    # 3. Default
+    return "GENERAL"
+
 def _build_audit_record(
     prompt_redacted: str,
     response_redacted: str,
     agent_id: str,
     user_id: str,
-    retention_category: str,
+    retention_category: Optional[str],
     db: Session,
+    timestamp: Optional[datetime] = None,
 ) -> AuditRecord:
-    now = datetime.now(timezone.utc)
+    now = timestamp or datetime.now(timezone.utc)
+    if now.tzinfo is None:
+        now = now.replace(tzinfo=timezone.utc)
+    else:
+        now = now.astimezone(timezone.utc)
+
+    # Resolve category if not specified
+    if not retention_category:
+        retention_category = resolve_agent_retention_category(db, agent_id)
+
+    retention_category = retention_category.upper().strip()
     expires_at  = calculate_retention_expiry(db, retention_category, now)
     record_hash = compute_record_hash(prompt_redacted, response_redacted, agent_id, user_id, now)
     return AuditRecord(
@@ -261,7 +344,7 @@ def _build_audit_record(
         agent_id=agent_id,
         user_id=user_id,
         timestamp=now,
-        retention_category=retention_category.upper(),
+        retention_category=retention_category,
         retention_expires_at=expires_at,
         record_hash=record_hash,
         is_expired=False,
@@ -420,7 +503,8 @@ def ingest_log(
     record = _build_audit_record(
         prompt_redacted, response_redacted,
         payload.agent_id, payload.user_id,
-        payload.retention_category or "GENERAL", db
+        payload.retention_category, db,
+        timestamp=payload.timestamp
     )
     db.add(record)
     db.commit()
@@ -451,7 +535,8 @@ def ingest_llm_interaction(
     record = _build_audit_record(
         redacted_prompt, redacted_response,
         payload.agent_id, payload.user_id,
-        payload.retention_category or "GENERAL", db
+        payload.retention_category, db,
+        timestamp=payload.timestamp
     )
     db.add(record)
     db.commit()
@@ -502,6 +587,12 @@ def reveal_log_pii(
     record = db.query(AuditRecord).filter_by(id=log_id).first()
     if not record:
         raise HTTPException(status_code=404, detail="Log record not found")
+
+    if record.is_expired or record.marked_for_deletion:
+        raise HTTPException(
+            status_code=410,
+            detail="PII has been deleted or expired due to retention policy"
+        )
 
     pii_mappings = db.query(PIIMapping).filter_by(user_id=record.user_id).all()
     token_map    = {m.token: decrypt_value(m.encrypted_value) for m in pii_mappings}
@@ -668,7 +759,77 @@ def delete_retention_policy(
                         query_details=f"Deleted policy: {cat}")
     return {"status": "deleted", "category": cat}
 
+# ── Agent Classifications ─────────────────────────────────────────────────────
+
+@app.get("/admin/agent-classifications", tags=["Agent Classifications"])
+def list_agent_classifications(
+    db: Session = Depends(get_db),
+    role: str = Depends(require_role(["admin", "auditor"]))
+):
+    """List all agent classifications (admin/auditor only)."""
+    classifications = db.query(AgentClassification).order_by(AgentClassification.agent_id).all()
+    return [
+        {"agent_id": c.agent_id, "regulatory_classification": c.regulatory_classification}
+        for c in classifications
+    ]
+
+@app.post("/admin/agent-classifications", status_code=201, tags=["Agent Classifications"])
+def upsert_agent_classification(
+    payload: AgentClassificationRequest,
+    db: Session = Depends(get_db),
+    role: str = Depends(require_role(["admin"]))
+):
+    """Create or update an agent's regulatory classification (admin only)."""
+    category = payload.regulatory_classification.upper().strip()
+    # Check if category is a valid policy category
+    policy = db.query(RetentionPolicy).filter_by(category=category).first()
+    if not policy and category not in {"GENERAL", "FINANCIAL", "HEALTHCARE"}:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Retention policy category '{category}' does not exist. Please create the policy first."
+        )
+
+    existing = db.query(AgentClassification).filter_by(agent_id=payload.agent_id).first()
+    if existing:
+        existing.regulatory_classification = category
+        db.commit()
+        db.refresh(existing)
+        record_access_audit(
+            db, accessor_role=role, endpoint="/admin/agent-classifications",
+            query_details=f"Updated agent {payload.agent_id} classification to {category}"
+        )
+        return {"status": "updated", "agent_id": existing.agent_id, "regulatory_classification": existing.regulatory_classification}
+    else:
+        new_class = AgentClassification(agent_id=payload.agent_id, regulatory_classification=category)
+        db.add(new_class)
+        db.commit()
+        db.refresh(new_class)
+        record_access_audit(
+            db, accessor_role=role, endpoint="/admin/agent-classifications",
+            query_details=f"Created agent {payload.agent_id} classification as {category}"
+        )
+        return {"status": "created", "agent_id": new_class.agent_id, "regulatory_classification": new_class.regulatory_classification}
+
+@app.delete("/admin/agent-classifications/{agent_id}", tags=["Agent Classifications"])
+def delete_agent_classification(
+    agent_id: str,
+    db: Session = Depends(get_db),
+    role: str = Depends(require_role(["admin"]))
+):
+    """Delete an agent's regulatory classification (admin only)."""
+    entry = db.query(AgentClassification).filter_by(agent_id=agent_id).first()
+    if not entry:
+        raise HTTPException(status_code=404, detail=f"Agent classification for '{agent_id}' not found.")
+    db.delete(entry)
+    db.commit()
+    record_access_audit(
+        db, accessor_role=role, endpoint=f"/admin/agent-classifications/{agent_id}",
+        query_details=f"Deleted agent classification for {agent_id}"
+    )
+    return {"status": "deleted", "agent_id": agent_id}
+
 # ── Access audit logs ─────────────────────────────────────────────────────────
+
 
 @app.get("/access-logs", tags=["Audit"])
 def list_access_audit_logs(
